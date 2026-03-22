@@ -103,16 +103,6 @@ function showScreen(screenId) {
 
 let onboardStep = 0;
 
-// Wire onboarding button — Safari drops inline onclick on dynamically shown elements
-(function () {
-  const btn = document.getElementById('onboardNextBtn');
-  if (!btn) return;
-  btn.addEventListener('click', function (e) {
-    e.preventDefault();
-    advanceOnboarding();
-  });
-})();
-
 function advanceOnboarding() {
   onboardStep++;
   if (onboardStep >= 5) {

@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net; worker-src 'self'; font-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#00e676">
+  <meta name="description" content="PhysioRep — camera-based workout form tracker with pose feedback and voice coaching">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>PhysioRep</title>
+  <style>
+    /* RESET & BASE */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --surface: #1a1a1a; --surface2: #252525;
+      --accent: #00e676; --accent-dim: #00c853; --danger: #ff5252;
+      --warn: #ffab40; --text: #f5f5f5; --text-dim: #aaa;
+      --radius: 12px; --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: var(--font); background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; touch-action: manipulation;
+    }
+
+    /* SCREENS */
+    .screen { display: none; flex-direction: column; height: 100vh; width: 100%; }
+    .screen.active { display: flex; }
+    .screen.scrollable { overflow-y: auto; }
+
+    /* ONBOARDING SCREEN */
+    #onboarding { align-items: center; justify-content: center; gap: 20px; padding: 32px; text-align: center; }
+    .onboard-step { display: none; flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 340px; }
+    .onboard-step.active { display: flex; }
+    .onboard-icon { font-size: 64px; }
+    .onboard-step h2 { font-size: 22px; font-weight: 800; }
+    .onboard-step p { font-size: 14px; color: var(--text-dim); line-height: 1.5; }
+    .onboard-dots { display: flex; gap: 8px; margin-top: 8px; }
+    .onboard-dots .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--surface2); transition: all 0.3s; }
+    .onboard-dots .dot.active { background: var(--accent); width: 24px; border-radius: 4px; }
+    .onboard-img { width: 200px; height: 200px; background: var(--surface); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 80px; }
+
+    /* HOME SCREEN */
+    #home { align-items: center; padding: 24px; padding-top: 40px; overflow-y: auto; }
+    .logo { font-size: 42px; font-weight: 800; letter-spacing: -2px; }
+    .logo span { color: var(--accent); }
+    .tagline { color: var(--text-dim); font-size: 14px; margin-bottom: 16px; }
+
+    .section-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; width: 100%; max-width: 360px; margin-top: 20px; margin-bottom: 8px; }
+    .exercise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 360px; }
+    .exercise-card {
+      background: var(--surface); border: 1px solid var(--surface2); border-radius: var(--radius);
+      padding: 16px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .exercise-card:hover, .exercise-card:active {
+      border-color: var(--accent); transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0, 230, 118, 0.12);
+    }
+    .exercise-card .card-icon { font-size: 24px; margin-bottom: 6px; }
+    .exercise-card h3 { font-size: 15px; margin-bottom: 2px; }
+    .exercise-card p { font-size: 11px; color: var(--text-dim); line-height: 1.3; }
+    .exercise-card .card-badge {
+      position: absolute; top: 8px; right: 8px; font-size: 9px; background: var(--accent);
+      color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 700;
+    }
+
+    /* Quick Start Routine */
+    .routine-card {
+      background: linear-gradient(135deg, #1a2a1a 0%, var(--surface) 100%);
+      border: 1px solid var(--accent); border-radius: var(--radius);
+      padding: 16px; width: 100%; max-width: 360px; cursor: pointer; transition: all 0.2s;
+      margin-top: 4px;
+    }
+    .routine-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0, 230, 118, 0.2); }
+    .routine-card h3 { font-size: 16px; color: var(--accent); margin-bottom: 4px; }
+    .routine-card p { font-size: 12px; color: var(--text-dim); }
+
+    .nav-row { display: flex; gap: 10px; width: 100%; max-width: 360px; margin-top: 16px; padding-bottom: 24px; }
+    .nav-btn {
+      flex: 1; padding: 12px; border-radius: var(--radius); border: 1px solid var(--surface2);
+      background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600;
+      cursor: pointer; text-align: center; transition: all 0.2s;
+    }
+    .nav-btn:hover { border-color: var(--accent); }
+
+    /* COUNTDOWN OVERLAY */
+    .countdown-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      z-index: 250; gap: 16px;
+    }
+    .countdown-overlay.active { display: flex; }
+    .countdown-number {
+      font-size: 120px; font-weight: 900; color: var(--accent); line-height: 1;
+      animation: countPulse 1s ease-in-out;
+    }
+    .countdown-label { font-size: 16px; color: var(--text-dim); }
+    @keyframes countPulse { 0% { transform: scale(1.3); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+
+    /* WORKOUT SCREEN */
+    #workout { position: relative; background: #000; }
+    .camera-container { position: relative; flex: 1; overflow: hidden; }
+    #videoEl { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    #canvasEl {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      transform: scaleX(-1); pointer-events: none;
+    }
+
+    .workout-hud {
+      position: absolute; top: 0; left: 0; right: 0; padding: 16px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+      z-index: 10;
+    }
+    .hud-left h2 { font-size: 18px; font-weight: 700; }
+    .hud-left .timer { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+    .hud-left .fps { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+    .hud-right { text-align: right; }
+    .rep-count { font-size: 64px; font-weight: 900; color: var(--accent); line-height: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .rep-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+    .form-feedback {
+      position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+      padding: 12px 28px; border-radius: 28px; font-size: 16px; font-weight: 700;
+      z-index: 10; transition: all 0.3s; opacity: 0; pointer-events: none;
+      text-align: center; max-width: 90%; letter-spacing: 0.3px;
+    }
+    .form-feedback.good { opacity: 1; background: rgba(0, 230, 118, 0.9); color: #000; }
+    .form-feedback.bad { opacity: 1; background: rgba(255, 82, 82, 0.9); color: #fff; }
+    .form-feedback.warn { opacity: 1; background: rgba(255, 171, 64, 0.9); color: #000; }
+    .form-feedback.milestone { opacity: 1; background: rgba(255, 215, 0, 0.95); color: #000; font-size: 18px; }
+
+    .workout-controls {
+      position: absolute; bottom: 0; left: 0; right: 0; padding: 16px;
+      display: flex; justify-content: center; gap: 16px; z-index: 10;
+      background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+    }
+    .ctrl-btn {
+      width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--accent);
+      background: rgba(0,0,0,0.6); color: var(--accent); font-size: 20px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .ctrl-btn.stop { border-color: var(--danger); color: var(--danger); }
+    .ctrl-btn.pause { border-color: var(--warn); color: var(--warn); }
+    .ctrl-btn.audio { font-size: 16px; }
+    .ctrl-btn:hover { transform: scale(1.1); }
+
+    .camera-guide {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      color: var(--text-dim); text-align: center; font-size: 14px; z-index: 5;
+      pointer-events: none; opacity: 0.8; background: rgba(0,0,0,0.5);
+      padding: 20px; border-radius: var(--radius); max-width: 280px;
+    }
+    .camera-guide.hidden { display: none; }
+    .camera-guide p { margin-bottom: 8px; }
+    .camera-guide .guide-icon { font-size: 32px; margin-bottom: 8px; }
+
+    /* SUMMARY SCREEN */
+    #summary { align-items: center; justify-content: flex-start; gap: 16px; padding: 24px; padding-top: 40px; overflow-y: auto; }
+    .summary-title { font-size: 26px; font-weight: 800; }
+    .summary-subtitle { font-size: 13px; color: var(--text-dim); margin-top: -8px; }
+    .summary-card {
+      background: var(--surface); border-radius: var(--radius); padding: 20px;
+      width: 100%; max-width: 360px;
+    }
+    .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--surface2); }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: var(--text-dim); font-size: 14px; }
+    .stat-value { font-weight: 700; font-size: 18px; }
+    .stat-value.good { color: var(--accent); }
+    .stat-value.ok { color: var(--warn); }
+    .stat-value.bad { color: var(--danger); }
+
+    .rom-card { background: var(--surface); border-radius: var(--radius); padding: 20px; width: 100%; max-width: 360px; }
+    .rom-card h4 { font-size: 14px; color: var(--text-dim); margin-bottom: 12px; }
+    .rom-bar-container { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .rom-bar { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .rom-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.5s; }
+    .rom-values { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); }
+
+    .tips-card { background: var(--surface); border-radius: var(--radius); padding: 20px; width: 100%; max-width: 360px; }
+    .tips-card h4 { font-size: 14px; color: var(--text-dim); margin-bottom: 8px; }
+    .tip-item { font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--surface2); line-height: 1.4; }
+    .tip-item:last-child { border-bottom: none; }
+
+    .form-issues { margin-top: 12px; }
+    .form-issues h4 { font-size: 14px; color: var(--text-dim); margin-bottom: 8px; }
+    .issue-tag {
+      display: inline-block; background: var(--surface2); border-radius: 8px;
+      padding: 4px 10px; font-size: 12px; margin: 2px 4px 2px 0;
+    }
+    .btn-primary {
+      width: 100%; max-width: 360px; padding: 16px; border-radius: var(--radius);
+      border: none; background: var(--accent); color: #000; font-size: 16px;
+      font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary:hover { background: var(--accent-dim); }
+    .btn-secondary {
+      width: 100%; max-width: 360px; padding: 14px; border-radius: var(--radius);
+      border: 1px solid var(--surface2); background: transparent; color: var(--text);
+      font-size: 14px; cursor: pointer;
+    }
+
+    /* HISTORY SCREEN */
+    #history { padding: 24px; padding-top: 40px; overflow-y: auto; }
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .history-header h2 { font-size: 24px; font-weight: 800; }
+    .history-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .history-tab {
+      padding: 8px 16px; border-radius: 8px; border: 1px solid var(--surface2);
+      background: transparent; color: var(--text-dim); font-size: 13px; cursor: pointer;
+    }
+    .history-tab.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+    .history-empty { color: var(--text-dim); text-align: center; margin-top: 60px; font-size: 14px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 100px; }
+    .history-item {
+      background: var(--surface); border-radius: var(--radius); padding: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .history-item .hi-left h3 { font-size: 15px; }
+    .history-item .hi-left p { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .history-item .hi-right { text-align: right; }
+    .history-item .hi-reps { font-size: 20px; font-weight: 800; color: var(--accent); }
+    .history-item .hi-score { font-size: 11px; }
+
+    /* Progress Chart */
+    .chart-container { background: var(--surface); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+    .chart-container h3 { font-size: 14px; color: var(--text-dim); margin-bottom: 12px; }
+    .mini-chart { display: flex; align-items: flex-end; gap: 4px; height: 80px; }
+    .chart-bar {
+      flex: 1; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 4px;
+      transition: height 0.3s; position: relative;
+    }
+    .chart-bar:hover::after {
+      content: attr(data-label); position: absolute; bottom: 100%; left: 50%;
+      transform: translateX(-50%); background: var(--surface2); color: var(--text);
+      padding: 2px 6px; border-radius: 4px; font-size: 10px; white-space: nowrap;
+    }
+
+    /* Personal Records */
+    .records-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .record-card {
+      flex: 1; background: var(--surface); border-radius: var(--radius); padding: 12px;
+      text-align: center;
+    }
+    .record-card .record-value { font-size: 22px; font-weight: 800; color: var(--accent); }
+    .record-card .record-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Streak */
+    .streak-banner {
+      background: linear-gradient(135deg, #1a2a1a 0%, var(--surface) 100%);
+      border: 1px solid var(--accent); border-radius: var(--radius);
+      padding: 14px; text-align: center; margin-bottom: 16px;
+    }
+    .streak-banner .streak-count { font-size: 28px; font-weight: 900; color: var(--accent); }
+    .streak-banner .streak-label { font-size: 12px; color: var(--text-dim); }
+
+    .back-btn {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      padding: 12px 28px; border-radius: var(--radius); border: 1px solid var(--surface2);
+      background: var(--surface); color: var(--text); font-size: 14px; font-weight: 600;
+      cursor: pointer; z-index: 20;
+    }
+
+    /* SETTINGS SCREEN */
+    #settings { padding: 24px; padding-top: 40px; overflow-y: auto; }
+    #settings h2 { font-size: 24px; font-weight: 800; margin-bottom: 20px; }
+    .settings-group { margin-bottom: 24px; }
+    .settings-group h3 { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .setting-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0; border-bottom: 1px solid var(--surface2);
+    }
+    .setting-item label { font-size: 15px; }
+    .setting-item .setting-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .toggle {
+      width: 48px; height: 26px; background: var(--surface2); border-radius: 13px;
+      position: relative; cursor: pointer; transition: background 0.3s; border: none;
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+      background: white; border-radius: 50%; transition: transform 0.3s;
+    }
+    .toggle.on::after { transform: translateX(22px); }
+    .setting-select {
+      background: var(--surface2); border: none; color: var(--text); padding: 8px 12px;
+      border-radius: 8px; font-size: 14px;
+    }
+    .danger-zone { margin-top: 32px; }
+    .danger-btn {
+      padding: 12px 20px; border-radius: var(--radius); border: 1px solid var(--danger);
+      background: transparent; color: var(--danger); font-size: 14px; cursor: pointer;
+    }
+
+    /* CUSTOM ROUTINE BUILDER */
+    #routineBuilder { padding: 24px; padding-top: 40px; overflow-y: auto; }
+    #routineBuilder h2 { font-size: 24px; font-weight: 800; margin-bottom: 16px; }
+    .routine-name-input {
+      width: 100%; max-width: 400px; padding: 12px; border-radius: 8px;
+      border: 1px solid var(--surface2); background: var(--surface); color: var(--text);
+      font-size: 16px; font-family: var(--font); margin-bottom: 16px;
+    }
+    .routine-name-input:focus { outline: none; border-color: var(--accent); }
+    .rb-exercise-list { width: 100%; max-width: 400px; margin-bottom: 16px; }
+    .rb-exercise-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); border-radius: 8px; padding: 12px; margin-bottom: 8px;
+      cursor: grab; border: 1px solid var(--surface2);
+    }
+    .rb-exercise-item.in-routine { border-color: var(--accent); background: #1a2a1a; }
+    .rb-exercise-item .rb-name { font-size: 14px; font-weight: 600; }
+    .rb-add-btn {
+      width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent);
+      background: transparent; color: var(--accent); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .rb-add-btn.remove { border-color: var(--danger); color: var(--danger); }
+    .rb-queue { width: 100%; max-width: 400px; margin-bottom: 16px; }
+    .rb-queue h4 { font-size: 13px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; }
+    .rb-queue-list { min-height: 48px; background: var(--surface); border-radius: 8px; padding: 8px; }
+    .rb-queue-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; background: var(--surface2); border-radius: 6px; margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .rb-queue-item .rb-order { color: var(--accent); font-weight: 800; margin-right: 8px; }
+    .saved-routines { width: 100%; max-width: 400px; margin-bottom: 16px; }
+    .saved-routine-card {
+      background: var(--surface); border-radius: var(--radius); padding: 14px;
+      margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+      border: 1px solid var(--surface2); cursor: pointer; transition: all 0.2s;
+    }
+    .saved-routine-card:hover { border-color: var(--accent); }
+    .saved-routine-card .sr-name { font-size: 15px; font-weight: 600; }
+    .saved-routine-card .sr-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .sr-actions { display: flex; gap: 8px; }
+    .sr-play { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; color: var(--accent); font-size: 14px; cursor: pointer; }
+    .sr-delete { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--danger); background: transparent; color: var(--danger); font-size: 14px; cursor: pointer; }
+
+    /* INSTALL BANNER */
+    .install-banner {
+      display: none; position: fixed; bottom: 16px; left: 16px; right: 16px;
+      background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius);
+      padding: 16px; z-index: 100; text-align: center;
+    }
+    .install-banner.show { display: block; }
+    .install-banner p { font-size: 13px; margin-bottom: 10px; }
+    .install-banner button { padding: 10px 24px; border-radius: 8px; border: none; background: var(--accent); color: #000; font-weight: 700; cursor: pointer; }
+
+    /* LOADING OVERLAY */
+    .loading-overlay {
+      position: fixed; inset: 0; background: var(--bg); display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      z-index: 200; gap: 16px;
+    }
+    .loading-overlay.hidden { display: none; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay p { color: var(--text-dim); font-size: 14px; }
+
+    /* REST TIMER OVERLAY */
+    .rest-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      z-index: 220; gap: 16px;
+    }
+    .rest-overlay.active { display: flex; }
+    .rest-time { font-size: 80px; font-weight: 900; color: var(--accent); }
+    .rest-label { font-size: 16px; color: var(--text-dim); }
+    .rest-skip { padding: 12px 28px; border-radius: var(--radius); border: 1px solid var(--surface2); background: transparent; color: var(--text); font-size: 14px; cursor: pointer; margin-top: 16px; }
+
+    /* ERROR TOAST */
+    .error-toast {
+      position: fixed; top: 16px; left: 16px; right: 16px; background: var(--danger);
+      color: #fff; padding: 14px 16px; border-radius: var(--radius); z-index: 300;
+      font-size: 14px; display: none; text-align: center;
+    }
+    .error-toast.show { display: block; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+    /* PT MODE STYLES */
+    .pt-badge {
+      background: linear-gradient(135deg, #7c4dff 0%, #536dfe 100%);
+      color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px;
+      font-weight: 700; display: inline-block; margin-bottom: 4px;
+    }
+    .pt-card {
+      background: linear-gradient(135deg, #1a1a2e 0%, var(--surface) 100%);
+      border: 1px solid #7c4dff; border-radius: var(--radius);
+      padding: 16px; width: 100%; max-width: 360px; cursor: pointer; transition: all 0.2s;
+      margin-top: 4px;
+    }
+    .pt-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124, 77, 255, 0.2); }
+    .pt-card h3 { font-size: 16px; color: #b388ff; margin-bottom: 4px; }
+    .pt-card p { font-size: 12px; color: var(--text-dim); }
+
+    /* PT Setup Screen */
+    #ptSetup { padding: 24px; padding-top: 40px; overflow-y: auto; }
+    #ptSetup h2 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    #ptSetup .pt-setup-desc { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+    .pt-form { width: 100%; max-width: 400px; }
+    .pt-field { margin-bottom: 16px; }
+    .pt-field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; }
+    .pt-input {
+      width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--surface2);
+      background: var(--surface); color: var(--text); font-size: 15px; font-family: var(--font);
+    }
+    .pt-input:focus { outline: none; border-color: #7c4dff; }
+    .pt-exercise-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pt-ex-chip {
+      padding: 8px 14px; border-radius: 20px; border: 1px solid var(--surface2);
+      background: transparent; color: var(--text-dim); font-size: 13px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pt-ex-chip.selected { background: #7c4dff; color: #fff; border-color: #7c4dff; }
+    .pt-schedule-row { display: flex; gap: 12px; }
+    .pt-schedule-row .pt-field { flex: 1; }
+
+    /* Pain Modal */
+    .pain-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      z-index: 260; gap: 16px; padding: 24px;
+    }
+    .pain-modal.active { display: flex; }
+    .pain-modal-card {
+      background: var(--surface); border-radius: var(--radius); padding: 24px;
+      width: 100%; max-width: 360px; text-align: center;
+    }
+    .pain-modal-card h3 { font-size: 20px; margin-bottom: 4px; }
+    .pain-modal-card .pain-context { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+    .pain-scale { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .pain-btn {
+      width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--surface2);
+      background: transparent; color: var(--text); font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .pain-btn:hover { border-color: #7c4dff; }
+    .pain-btn.selected { background: #7c4dff; border-color: #7c4dff; color: #fff; }
+    .pain-btn.low { border-color: #00e676; }
+    .pain-btn.mid { border-color: #ffab40; }
+    .pain-btn.high { border-color: #ff5252; }
+    .pain-location-select {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--surface2);
+      background: var(--surface2); color: var(--text); font-size: 14px; margin-bottom: 12px;
+    }
+    .pain-notes {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--surface2);
+      background: var(--surface); color: var(--text); font-size: 14px; resize: none;
+      height: 60px; font-family: var(--font); margin-bottom: 16px;
+    }
+    .pain-submit-row { display: flex; gap: 10px; }
+    .pain-submit-row button { flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .pain-submit-btn { background: #7c4dff; border: none; color: #fff; }
+    .pain-skip-btn { background: transparent; border: 1px solid var(--surface2); color: var(--text); }
+
+    /* Compliance Dashboard */
+    #ptDashboard { padding: 24px; padding-top: 40px; overflow-y: auto; }
+    #ptDashboard h2 { font-size: 24px; font-weight: 800; margin-bottom: 16px; }
+    .compliance-ring {
+      width: 140px; height: 140px; margin: 0 auto 16px;
+      position: relative; display: flex; align-items: center; justify-content: center;
+    }
+    .compliance-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+    .compliance-ring .ring-value { font-size: 36px; font-weight: 900; }
+    .compliance-ring .ring-label { font-size: 11px; color: var(--text-dim); }
+    .compliance-stats { display: flex; gap: 8px; margin-bottom: 16px; width: 100%; max-width: 400px; }
+    .comp-stat {
+      flex: 1; background: var(--surface); border-radius: var(--radius); padding: 12px;
+      text-align: center;
+    }
+    .comp-stat .cs-value { font-size: 20px; font-weight: 800; color: var(--accent); }
+    .comp-stat .cs-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; }
+    .exercise-compliance-list { width: 100%; max-width: 400px; margin-bottom: 16px; }
+    .ex-comp-item {
+      background: var(--surface); border-radius: 8px; padding: 12px; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .ex-comp-bar { height: 4px; background: var(--surface2); border-radius: 2px; margin-top: 6px; }
+    .ex-comp-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); }
+    .pain-trend-card {
+      background: var(--surface); border-radius: var(--radius); padding: 16px;
+      width: 100%; max-width: 400px; margin-bottom: 16px;
+    }
+    .pain-trend-card h4 { font-size: 14px; color: var(--text-dim); margin-bottom: 8px; }
+    .pain-trend-value { font-size: 18px; font-weight: 700; }
+    .pain-trend-value.improving { color: #00e676; }
+    .pain-trend-value.worsening { color: #ff5252; }
+    .pain-trend-value.stable { color: var(--warn); }
+    .pt-action-row { display: flex; gap: 10px; width: 100%; max-width: 400px; margin-bottom: 16px; }
+    .pt-action-btn {
+      flex: 1; padding: 12px; border-radius: var(--radius); border: 1px solid #7c4dff;
+      background: transparent; color: #b388ff; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .pt-action-btn:hover { background: rgba(124, 77, 255, 0.1); }
+
+    /* Report Screen */
+    #ptReport { padding: 24px; padding-top: 40px; overflow-y: auto; }
+    #ptReport h2 { font-size: 24px; font-weight: 800; margin-bottom: 16px; }
+    .report-preview {
+      background: #fff; color: #333; border-radius: var(--radius); padding: 20px;
+      width: 100%; max-width: 400px; margin-bottom: 16px; font-size: 13px; line-height: 1.6;
+    }
+    .report-preview h3 { color: #00c853; font-size: 18px; margin-bottom: 8px; }
+    .report-preview .rp-meta { color: #666; font-size: 12px; margin-bottom: 12px; }
+    .report-preview .rp-score { font-size: 36px; font-weight: 900; margin-bottom: 8px; }
+    .report-actions { display: flex; gap: 10px; width: 100%; max-width: 400px; }
+    .report-actions button { flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+    /* Modifications Modal */
+    .mod-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      z-index: 260; gap: 16px; padding: 24px;
+    }
+    .mod-modal.active { display: flex; }
+    .mod-card {
+      background: var(--surface); border-radius: var(--radius); padding: 20px;
+      width: 100%; max-width: 380px;
+    }
+    .mod-card h3 { font-size: 18px; margin-bottom: 12px; }
+    .mod-item {
+      padding: 12px; background: var(--surface2); border-radius: 8px; margin-bottom: 8px;
+    }
+    .mod-item h4 { font-size: 14px; margin-bottom: 4px; }
+    .mod-item p { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+
+    /* VITALS HUD */
+    .vitals-badge {
+      position: absolute;
+      right: 12px;
+      background: rgba(0,0,0,0.6);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+      z-index: 10;
+    }
+    #hrDisplay {
+      top: 80px;
+      color: #ff5252;
+    }
+    #hrDisplay.low-confidence {
+      opacity: 0.5;
+    }
+    #brDisplay {
+      top: 110px;
+      color: #69f0ae;
+    }
+
+    /* CHALLENGES */
+    .challenge-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .challenge-card.completed {
+      border: 1px solid var(--primary);
+      opacity: 0.7;
+    }
+    .challenge-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .challenge-icon {
+      font-size: 28px;
+    }
+    .challenge-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .challenge-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .challenge-type {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .challenge-badge {
+      color: var(--primary);
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .challenge-progress-bar {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .challenge-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #7c4dff);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    .challenge-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .challenge-completed-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--surface2);
+      font-size: 13px;
+    }
+
+    /* LEADERBOARD */
+    .leaderboard-row {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: var(--surface);
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
+    .leaderboard-row.leaderboard-me {
+      background: linear-gradient(135deg, rgba(0,230,118,0.1), rgba(124,77,255,0.1));
+      border: 1px solid var(--primary);
+    }
+    .leaderboard-rank {
+      width: 36px;
+      font-size: 18px;
+      text-align: center;
+    }
+    .leaderboard-name {
+      flex: 1;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .leaderboard-pts {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* HOME CHALLENGES PREVIEW */
+    .home-challenge-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border-radius: 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .mini-progress-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .mini-progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    /* ACCESSIBILITY */
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .exercise-card:focus-visible, .routine-card:focus-visible, .pt-card:focus-visible {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.3);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* HELP BUTTONS */
+    .help-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1px solid var(--text-dim);
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 11px;
+      cursor: pointer;
+      vertical-align: middle;
+      margin-left: 4px;
+      padding: 0;
+      line-height: 1;
+    }
+    .help-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* HELP MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+    }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    .modal-box h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .modal-box button {
+      width: 100%;
+    }
+
+    /* NERD SECTION */
+    .nerd-section {
+      width: 100%;
+      margin-top: 12px;
+    }
+    .nerd-toggle {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: var(--radius);
+      color: var(--text-dim);
+      font-size: 14px;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    .nerd-toggle:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .nerd-content {
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+    .nerd-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--surface2);
+    }
+    .nerd-row:last-child {
+      border-bottom: none;
+    }
+    .nerd-label {
+      color: var(--text-dim);
+    }
+    .nerd-value {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* FORM VERDICT STYLES */
+    #formVerdict.verdict-great { border-left: 3px solid var(--accent); }
+    #formVerdict.verdict-good { border-left: 3px solid #69f0ae; }
+    #formVerdict.verdict-ok { border-left: 3px solid var(--warn); }
+    #formVerdict.verdict-poor { border-left: 3px solid var(--danger); }
+
+    /* LEVEL SELECTION */
+    .level-btn.selected {
+      border-color: var(--accent) !important;
+      background: rgba(0, 230, 118, 0.08) !important;
+    }
+
+    .setting-label {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* BOTTOM TAB BAR */
+    .tab-bar {
+      display: flex;
+      width: 100%;
+      max-width: 360px;
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-top: 20px;
+      margin-bottom: 24px;
+    }
+    .tab-bar-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 12px 4px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font);
+    }
+    .tab-bar-item:hover, .tab-bar-item:active {
+      color: var(--accent);
+      background: rgba(0,230,118,0.05);
+    }
+    .tab-bar-icon { font-size: 20px; }
+
+    /* FILTER CHIPS */
+    .filter-chip {
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--surface2);
+      background: var(--surface); color: var(--text-dim); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; font-family: var(--font);
+    }
+    .filter-chip.active, .filter-chip:hover {
+      border-color: var(--accent); color: var(--accent); background: rgba(0,230,118,0.08);
+    }
+
+    /* PROGRAM CARDS */
+    .program-card {
+      background: var(--surface); border: 1px solid var(--surface2); border-radius: var(--radius);
+      padding: 16px; cursor: pointer; transition: all 0.2s;
+    }
+    .program-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .program-card .prog-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .program-card .prog-icon { font-size: 28px; }
+    .program-card .prog-badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+    .program-card .prog-title { font-size: 16px; font-weight: 700; margin-top: 8px; }
+    .program-card .prog-desc { font-size: 12px; color: var(--text-dim); margin-top: 4px; line-height: 1.4; }
+    .program-card .prog-meta { display: flex; gap: 12px; margin-top: 8px; font-size: 11px; color: var(--text-dim); }
+
+    /* HIIT CARDS */
+    .hiit-card {
+      background: var(--surface); border: 1px solid var(--surface2); border-radius: var(--radius);
+      padding: 16px; cursor: pointer; transition: all 0.2s;
+    }
+    .hiit-card:hover { border-color: #f59e0b; transform: translateY(-1px); }
+    .hiit-card .hiit-badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: #f59e0b; color: #000; }
+
+    /* HEATMAP CELLS */
+    .heatmap-cell {
+      width: 12px; height: 12px; border-radius: 2px; background: var(--surface2);
+    }
+    .heatmap-cell.l1 { background: #064e3b; }
+    .heatmap-cell.l2 { background: #059669; }
+    .heatmap-cell.l3 { background: #34d399; }
+    .heatmap-cell.l4 { background: #00e676; }
+
+    /* BODY RADAR BARS */
+    .radar-row { display: flex; align-items: center; gap: 8px; }
+    .radar-label { width: 80px; font-size: 12px; color: var(--text-dim); text-align: right; }
+    .radar-bar { flex: 1; height: 14px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .radar-fill { height: 100%; border-radius: 4px; transition: width 0.6s; }
+    .radar-value { width: 30px; font-size: 12px; font-weight: 700; }
+
+    /* SCIENCE SECTIONS */
+    .science-section { margin-bottom: 14px; }
+    .science-section h4 { font-size: 13px; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+    .science-section p { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+    /* WORKOUT CONTROL LABELS */
+    .ctrl-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .ctrl-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* FIRST-USE HELP OVERLAY */
+    .first-use-tip {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.85);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      max-width: 300px;
+      z-index: 20;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .first-use-tip .tip-dismiss {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+
+    /* SCREEN HEADER (consistent) */
+    .screen-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 0;
+      margin-bottom: 8px;
+    }
+    .screen-header h2 {
+      flex: 1;
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .screen-header .back-arrow {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--surface2);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SKIP TO MAIN CONTENT -->
+  <a href="#home" class="skip-link" style="position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; z-index:999; padding:8px; background:var(--accent); color:#000; font-weight:700; text-decoration:none;"
+     onfocus="this.style.left='8px'; this.style.width='auto'; this.style.height='auto';"
+     onblur="this.style.left='-9999px'; this.style.width='1px'; this.style.height='1px';">
+    Skip to main content
+  </a>
+
+  <!-- ERROR TOAST -->
+  <div class="error-toast" id="errorToast" role="alert" aria-live="assertive"></div>
+
+  <!-- LOADING -->
+  <div class="loading-overlay" id="loadingOverlay" role="status" aria-label="Loading application">
+    <div class="spinner"></div>
+    <p>Loading PhysioRep...</p>
+  </div>
+
+  <!-- COUNTDOWN OVERLAY -->
+  <div class="countdown-overlay" id="countdownOverlay" role="timer" aria-live="polite">
+    <div class="countdown-label" id="countdownLabel">Get in position...</div>
+    <div class="countdown-number" id="countdownNumber">3</div>
+  </div>
+
+  <!-- REST TIMER -->
+  <div class="rest-overlay" id="restOverlay">
+    <div class="rest-label">Rest</div>
+    <div class="rest-time" id="restTime">60</div>
+    <div class="rest-label">Next up: <span id="restNextExercise">—</span></div>
+    <button class="rest-skip" onclick="skipRest()">Skip →</button>
+  </div>
+
+  <!-- ONBOARDING SCREEN -->
+  <div class="screen" id="onboarding">
+    <div class="onboard-step active" data-step="0">
+      <div class="onboard-img">🏋️</div>
+      <h2>Welcome to PhysioRep</h2>
+      <p>Your personal form coach. Pose tracking tells you when your form breaks down — so you build strength, not injuries.</p>
+    </div>
+    <div class="onboard-step" data-step="1">
+      <div class="onboard-img">📱</div>
+      <h2>Phone Placement</h2>
+      <p>Prop your phone up 3-4 feet high, 6-8 feet away. The camera needs to see your full body — head to feet. A shelf, stack of books, or tripod works great.</p>
+    </div>
+    <div class="onboard-step" data-step="2">
+      <div class="onboard-img">🔊</div>
+      <h2>Voice Coaching</h2>
+      <p>PhysioRep speaks your form cues out loud — "knees caving!", "chest up!" — so you can focus on the movement, not the screen. Turn your volume up.</p>
+    </div>
+    <div class="onboard-step" data-step="3">
+      <div class="onboard-img">🎓</div>
+      <h2>How Much Detail?</h2>
+      <p>Pick how much info you want to see. You can always change this in Settings.</p>
+      <div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:280px; margin-top:8px;">
+        <button class="level-btn" onclick="setDetailLevel('simple')" style="padding:14px; border-radius:10px; border:1px solid var(--surface2); background:var(--surface); color:var(--text); cursor:pointer; text-align:left;">
+          <strong>Simple</strong><br><span style="font-size:12px; color:var(--text-dim);">Just tell me what to fix</span>
+        </button>
+        <button class="level-btn" onclick="setDetailLevel('standard')" style="padding:14px; border-radius:10px; border:1px solid var(--accent); background:rgba(0,230,118,0.08); color:var(--text); cursor:pointer; text-align:left;">
+          <strong>Standard</strong> <span style="font-size:11px; color:var(--accent);">recommended</span><br><span style="font-size:12px; color:var(--text-dim);">Scores, tips, and progress tracking</span>
+        </button>
+        <button class="level-btn" onclick="setDetailLevel('nerd')" style="padding:14px; border-radius:10px; border:1px solid var(--surface2); background:var(--surface); color:var(--text); cursor:pointer; text-align:left;">
+          <strong>Nerd Mode</strong><br><span style="font-size:12px; color:var(--text-dim);">Joint angles, signal data, raw metrics</span>
+        </button>
+      </div>
+    </div>
+    <div class="onboard-step" data-step="4">
+      <div class="onboard-img">📈</div>
+      <h2>Track Your Progress</h2>
+      <p>Every workout is logged with reps, form score, and range of motion. Watch yourself improve over days and weeks.</p>
+    </div>
+    <div class="onboard-dots">
+      <div class="dot active" data-dot="0"></div>
+      <div class="dot" data-dot="1"></div>
+      <div class="dot" data-dot="2"></div>
+      <div class="dot" data-dot="3"></div>
+      <div class="dot" data-dot="4"></div>
+    </div>
+    <button class="btn-primary" style="max-width:300px; margin-top:16px;" onclick="advanceOnboarding()">Next</button>
+  </div>
+
+  <!-- HOME SCREEN -->
+  <div class="screen" id="home">
+    <div class="logo">Physio<span>Rep</span></div>
+    <p class="tagline">Perfect form. Every rep.</p>
+
+    <div id="smartSuggestion" style="width:100%; max-width:360px; margin-top:12px;"></div>
+
+    <div class="section-label">Quick Routine</div>
+    <div class="routine-card" role="button" tabindex="0" aria-label="Start Full Body Circuit" onclick="startRoutine()" onkeydown="if(event.key==='Enter')this.click()">
+      <h3>Full Body Circuit</h3>
+      <p>Squats → Push-Ups → Lunges → Plank • 60s rest between sets</p>
+    </div>
+    <div class="routine-card" role="button" tabindex="0" aria-label="Create custom routine" style="border-color: var(--surface2); background: var(--surface);" onclick="showScreen('routineBuilder')" onkeydown="if(event.key==='Enter')this.click()">
+      <h3 style="color: var(--text);">+ Custom Routine</h3>
+      <p>Build your own exercise circuit</p>
+    </div>
+    <div id="homeCustomRoutines"></div>
+
+    <div class="section-label">Single Exercise</div>
+    <div class="exercise-grid">
+      <div class="exercise-card" role="button" tabindex="0" aria-label="Start Squats" onclick="startWorkout('squat')" onkeydown="if(event.key==='Enter')this.click()">
+        <div class="card-icon">🦵</div>
+        <h3>Squats</h3>
+        <p>Checks if you're going low enough with good balance</p>
+      </div>
+      <div class="exercise-card" role="button" tabindex="0" aria-label="Start Push-Ups" onclick="startWorkout('pushup')" onkeydown="if(event.key==='Enter')this.click()">
+        <div class="card-icon">💪</div>
+        <h3>Push-Ups</h3>
+        <p>Checks your arm bend and body straightness</p>
+      </div>
+      <div class="exercise-card" role="button" tabindex="0" aria-label="Start Lunges" onclick="startWorkout('lunge')" onkeydown="if(event.key==='Enter')this.click()">
+        <div class="card-icon">🦿</div>
+        <h3>Lunges</h3>
+        <p>Checks your knee position and balance</p>
+      </div>
+      <div class="exercise-card" role="button" tabindex="0" aria-label="Start Plank" onclick="startWorkout('plank')" onkeydown="if(event.key==='Enter')this.click()">
+        <div class="card-icon">🧘</div>
+        <h3>Plank</h3>
+        <p>Checks your body stays flat like a board</p>
+      </div>
+      <div class="exercise-card" role="button" tabindex="0" aria-label="Start Shoulder Press" onclick="startWorkout('shoulderpress')" onkeydown="if(event.key==='Enter')this.click()">
+        <div class="card-icon">🏋️</div>
+        <h3>Shoulder Press</h3>
+        <p>Checks arms go fully up and stay even</p>
+      </div>
+      <div class="exercise-card" role="button" tabindex="0" aria-label="Start Deadlift" onclick="startWorkout('deadlift')" onkeydown="if(event.key==='Enter')this.click()">
+        <div class="card-icon">🔥</div>
+        <h3>Deadlift</h3>
+        <p>Checks you bend at the hips, not the back</p>
+      </div>
+    </div>
+
+    <!-- PROGRAMS BANNER -->
+    <div id="activeProgramBanner" style="display:none; width:100%; max-width:360px; background:linear-gradient(135deg,#1a1a3a,var(--surface)); border:1px solid #7c3aed; border-radius:var(--radius); padding:14px; margin-top:4px; cursor:pointer;" onclick="showScreen('programs')">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:11px; color:#c084fc; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Active Program</div>
+          <div id="progBannerName" style="font-size:16px; font-weight:700; margin-top:2px;">—</div>
+        </div>
+        <div id="progBannerProgress" style="font-size:24px; font-weight:900; color:#c084fc;">0%</div>
+      </div>
+      <div style="height:4px; background:var(--surface2); border-radius:2px; margin-top:8px;">
+        <div id="progBannerBar" style="height:100%; background:#7c3aed; border-radius:2px; width:0%; transition:width 0.5s;"></div>
+      </div>
+    </div>
+    <div id="xpBanner" style="width:100%; max-width:360px;"></div>
+
+    <div class="section-label">Programs & HIIT</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:360px;">
+      <div class="exercise-card" style="text-align:center;" onclick="showScreen('programs')">
+        <div class="card-icon">📋</div>
+        <h3>Programs</h3>
+        <p>Multi-week plans with progressive overload</p>
+      </div>
+      <div class="exercise-card" style="text-align:center;" onclick="showScreen('hiitScreen')">
+        <div class="card-icon">⚡</div>
+        <h3>HIIT</h3>
+        <p>Tabata, EMOM, AMRAP and circuits</p>
+      </div>
+    </div>
+
+    <div class="section-label">Analyze & Track</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:360px;">
+      <div class="exercise-card" style="text-align:center;" onclick="showScreen('analyticsScreen')">
+        <div class="card-icon">📈</div>
+        <h3>Analytics</h3>
+        <p>Fitness score, trends, body radar</p>
+      </div>
+      <div class="exercise-card" style="text-align:center;" onclick="showScreen('videoUpload')">
+        <div class="card-icon">🎥</div>
+        <h3>Video Analysis</h3>
+        <p>Upload a recording for form review</p>
+      </div>
+    </div>
+
+    <div class="section-label">PT Mode</div>
+    <div class="pt-card" role="button" tabindex="0" aria-label="Open PT Compliance Tracker" onclick="showPTEntry()" onkeydown="if(event.key==='Enter')this.click()">
+      <div class="pt-badge">PREMIUM</div>
+      <h3>PT Compliance Tracker</h3>
+      <p>Track prescribed exercises, pain levels, and share progress reports with your therapist</p>
+    </div>
+
+    <div class="section-label">Prep & Recovery</div>
+    <div style="display:flex; gap:10px; width:100%; max-width:360px;">
+      <div class="exercise-card" style="flex:1; text-align:center;" onclick="startWarmup()">
+        <div class="card-icon">🔥</div>
+        <h3>Warm-Up</h3>
+        <p>3 min guided</p>
+      </div>
+      <div class="exercise-card" style="flex:1; text-align:center;" onclick="startCooldown()">
+        <div class="card-icon">❄️</div>
+        <h3>Cool-Down</h3>
+        <p>3.5 min stretch</p>
+      </div>
+    </div>
+
+    <div id="homeBadges" style="width:100%; max-width:360px; margin-top:12px;"></div>
+
+    <div id="homeChallenges" style="width:100%; max-width:360px; margin-top:12px;"></div>
+
+    <!-- Bottom tab bar — consistent, always visible -->
+    <div class="tab-bar">
+      <button class="tab-bar-item" onclick="showScreen('home')">
+        <span class="tab-bar-icon">🏠</span>Home
+      </button>
+      <button class="tab-bar-item" onclick="showScreen('history')">
+        <span class="tab-bar-icon">📊</span>History
+      </button>
+      <button class="tab-bar-item" onclick="showChallenges()">
+        <span class="tab-bar-icon">🏅</span>Challenges
+      </button>
+      <button class="tab-bar-item" onclick="showMetricsScreen()">
+        <span class="tab-bar-icon">⚖️</span>Body
+      </button>
+      <button class="tab-bar-item" onclick="showScreen('settings')">
+        <span class="tab-bar-icon">⚙️</span>Settings
+      </button>
+    </div>
+  </div>
+
+  <!-- WORKOUT SCREEN -->
+  <div class="screen" id="workout">
+    <div class="camera-container">
+      <video id="videoEl" autoplay playsinline aria-hidden="true"></video>
+      <canvas id="canvasEl" aria-hidden="true"></canvas>
+      <div class="camera-guide" id="cameraGuide">
+        <div class="guide-icon">📸</div>
+        <p><strong>Position your full body in frame</strong></p>
+        <p>Step back 6-8 feet from your phone</p>
+        <p>Good lighting helps accuracy</p>
+      </div>
+      <div class="workout-hud">
+        <div class="hud-left">
+          <h2 id="exerciseName">Squats</h2>
+          <div class="timer" id="timerDisplay">00:00</div>
+          <div class="fps" id="fpsDisplay"></div>
+          <div id="hrDisplay" class="vitals-badge low-confidence">-- BPM</div>
+          <div id="brDisplay" class="vitals-badge" style="display:none;"></div>
+        </div>
+        <div class="hud-right">
+          <div class="rep-count" id="repCount">0</div>
+          <div class="rep-label" id="repLabel">reps</div>
+        </div>
+      </div>
+      <div class="form-feedback" id="formFeedback"></div>
+      <!-- First-use tip: explains what user is seeing -->
+      <div class="first-use-tip" id="firstUseTip" style="display:none;">
+        <strong>You're being tracked!</strong><br>
+        The green lines show your body position. The app watches your joints to check your form in real time.<br>
+        <button class="tip-dismiss" onclick="dismissFirstUseTip()">Got it</button>
+      </div>
+      <div class="workout-controls">
+        <div class="ctrl-group">
+          <button class="ctrl-btn audio" onclick="toggleAudio()" id="audioBtn" title="Toggle Audio" aria-label="Toggle audio">🔊</button>
+          <span class="ctrl-label">Sound</span>
+        </div>
+        <div class="ctrl-group">
+          <button class="ctrl-btn pause" onclick="togglePause()" id="pauseBtn" title="Pause" aria-label="Pause workout">⏸</button>
+          <span class="ctrl-label">Pause</span>
+        </div>
+        <div class="ctrl-group">
+          <button class="ctrl-btn stop" onclick="stopWorkout()" title="Stop" aria-label="Stop workout">■</button>
+          <span class="ctrl-label">Finish</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY SCREEN -->
+  <div class="screen scrollable" id="summary">
+    <div class="summary-title">Workout Complete 🎉</div>
+    <div class="summary-subtitle" id="sumSubtitle"></div>
+
+    <!-- Simple results anyone can understand -->
+    <div class="summary-card">
+      <div class="stat-row">
+        <span class="stat-label">Exercise</span>
+        <span class="stat-value" id="sumExercise">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Reps</span>
+        <span class="stat-value" id="sumReps">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Duration</span>
+        <span class="stat-value" id="sumDuration">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Form Score <button class="help-btn" onclick="showHelp('formScore')">?</button></span>
+        <span class="stat-value" id="sumScore">—</span>
+      </div>
+      <!-- Plain English form verdict -->
+      <div id="formVerdict" style="padding:12px; background:var(--surface2); border-radius:8px; margin-top:8px; font-size:14px; line-height:1.5;"></div>
+    </div>
+
+    <!-- Form Issues (with plain explanations) -->
+    <div class="form-issues" id="formIssues">
+      <h4>What to work on <button class="help-btn" onclick="showHelp('formIssues')">?</button></h4>
+      <div id="issuesList"></div>
+    </div>
+
+    <!-- ROM card (only shows when data exists) -->
+    <div class="rom-card" id="romCard" style="display:none;">
+      <h4>Range of Motion <button class="help-btn" onclick="showHelp('rom')">?</button></h4>
+      <div class="rom-bar-container">
+        <span style="font-size:11px; color:var(--text-dim);">0°</span>
+        <div class="rom-bar"><div class="rom-bar-fill" id="romBarFill" style="width:0%"></div></div>
+        <span style="font-size:11px; color:var(--text-dim);">180°</span>
+      </div>
+      <div class="rom-values">
+        <span>Min: <strong id="romMin">—</strong></span>
+        <span>Range: <strong id="romRange">—</strong></span>
+        <span>Max: <strong id="romMax">—</strong></span>
+      </div>
+    </div>
+
+    <!-- How to Improve -->
+    <div class="tips-card" id="tipsCard">
+      <h4>How to Improve</h4>
+      <div id="tipsList"></div>
+    </div>
+
+    <!-- Vitals -->
+    <div id="vitalsCard"></div>
+    <div id="xpArea"></div>
+    <div id="tempoArea"></div>
+
+    <!-- PT Summary area -->
+    <div id="ptSummaryArea"></div>
+
+    <!-- Details for Nerds (collapsed by default) -->
+    <div class="nerd-section" id="nerdSection" style="display:none;">
+      <button class="nerd-toggle" onclick="toggleNerdSection()">
+        <span>📊 Details for Nerds</span>
+        <span id="nerdArrow">▼</span>
+      </button>
+      <div id="nerdContent" class="nerd-content" style="display:none;"></div>
+    </div>
+
+    <button class="btn-secondary" style="border-color:var(--accent); color:var(--accent); margin-bottom:8px;" onclick="shareWorkoutSummary()">📤 Share Workout</button>
+    <button class="btn-primary" onclick="showScreen('home')">Back to Home</button>
+    <button class="btn-secondary" onclick="startWorkout(lastExercise)" style="margin-bottom:32px;">Repeat Exercise</button>
+  </div>
+
+  <!-- HISTORY SCREEN -->
+  <div class="screen scrollable" id="history">
+    <div class="screen-header">
+      <button class="back-arrow" onclick="showScreen('home')">←</button>
+      <h2>Progress</h2>
+    </div>
+    <div id="streakBanner"></div>
+    <div id="historyBadges"></div>
+    <div id="recordsRow"></div>
+    <div id="chartContainer" aria-label="Form score chart"></div>
+    <div class="history-tabs" id="historyTabs">
+      <button class="history-tab active" onclick="filterHistory('all')">All</button>
+      <button class="history-tab" onclick="filterHistory('squat')">Squats</button>
+      <button class="history-tab" onclick="filterHistory('pushup')">Push-Ups</button>
+      <button class="history-tab" onclick="filterHistory('lunge')">Lunges</button>
+      <button class="history-tab" onclick="filterHistory('plank')">Plank</button>
+    </div>
+    <div id="historyContent"></div>
+  </div>
+
+  <!-- CHALLENGES SCREEN -->
+  <div id="challenges" class="screen scrollable" style="padding:24px; padding-top:40px;">
+    <div class="screen-header">
+      <button class="back-arrow" onclick="showScreen('home')">←</button>
+      <h2>Challenges</h2>
+      <button class="back-arrow" onclick="shareWeeklyStats()" title="Share Stats">📤</button>
+    </div>
+
+    <div>
+      <div id="activeChallengesList"></div>
+
+      <div id="challengeHistory" style="margin-top:24px;"></div>
+
+      <div class="challenge-social-section" style="margin-top:24px;">
+        <h3 style="margin-bottom:12px;">Leaderboard</h3>
+        <div id="leaderboardList"></div>
+
+        <div style="margin-top:16px; padding:16px; background:var(--surface); border-radius:12px;">
+          <p style="font-size:13px; color:var(--text-dim); margin-bottom:8px;">Your Friend Code:</p>
+          <p id="myFriendCode" style="font-size:24px; font-weight:700; letter-spacing:4px; text-align:center; color:var(--primary);"></p>
+        </div>
+
+        <div style="margin-top:12px;">
+          <input type="text" id="friendCodeInput" placeholder="Friend code" maxlength="6" style="width:45%; display:inline-block; padding:10px; background:var(--surface); border:1px solid var(--surface2); border-radius:8px; color:var(--text); margin-right:4px;">
+          <input type="text" id="friendNameInput" placeholder="Name" style="width:35%; display:inline-block; padding:10px; background:var(--surface); border:1px solid var(--surface2); border-radius:8px; color:var(--text); margin-right:4px;">
+          <button class="btn-primary" onclick="addFriend()" style="padding:10px 16px; font-size:13px;">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS SCREEN -->
+  <div class="screen scrollable" id="settings">
+    <h2>Settings</h2>
+
+    <div class="settings-group">
+      <h3>Display</h3>
+      <div class="setting-item" style="flex-direction:column; align-items:flex-start; gap:8px;">
+        <label class="setting-label">Detail Level</label>
+        <select id="detailLevelSelect" onchange="saveSetting('detailLevel', this.value)" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--surface2); border-radius:8px; color:var(--text); font-size:14px;">
+          <option value="simple">Simple — Just tell me what to fix</option>
+          <option value="standard">Standard — Scores, tips, progress</option>
+          <option value="nerd">Nerd Mode — All the data</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h3>Audio & Voice</h3>
+      <div class="setting-item">
+        <div><label>Voice Feedback</label><div class="setting-desc">Speak form cues aloud</div></div>
+        <button class="toggle on" id="toggleVoice" onclick="toggleSetting('voice')"></button>
+      </div>
+      <div class="setting-item">
+        <div><label>Rep Counting</label><div class="setting-desc">Voice announces each rep</div></div>
+        <button class="toggle on" id="toggleRepCount" onclick="toggleSetting('repCount')"></button>
+      </div>
+      <div class="setting-item">
+        <div><label>Milestone Alerts</label><div class="setting-desc">"10 reps! Solid set!"</div></div>
+        <button class="toggle on" id="toggleMilestones" onclick="toggleSetting('milestones')"></button>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h3>Camera</h3>
+      <div class="setting-item">
+        <div><label>Camera</label><div class="setting-desc">Which camera to use</div></div>
+        <select class="setting-select" id="cameraSelect" aria-label="Camera selection" onchange="saveSetting('camera', this.value)">
+          <option value="environment">Back camera</option>
+          <option value="user">Front camera</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div><label>Show Skeleton</label><div class="setting-desc">Draw pose overlay</div></div>
+        <button class="toggle on" id="toggleSkeleton" onclick="toggleSetting('skeleton')"></button>
+      </div>
+      <div class="setting-item">
+        <div><label>Show FPS</label><div class="setting-desc">Frame rate counter</div></div>
+        <button class="toggle" id="toggleFPS" onclick="toggleSetting('fps')"></button>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h3>Workout</h3>
+      <div class="setting-item">
+        <div><label>Countdown Timer</label><div class="setting-desc">Seconds before workout starts</div></div>
+        <select class="setting-select" id="countdownSelect" aria-label="Countdown timer duration" onchange="saveSetting('countdown', this.value)">
+          <option value="3">3 seconds</option>
+          <option value="5">5 seconds</option>
+          <option value="10">10 seconds</option>
+          <option value="0">None</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div><label>Rest Timer (Routine)</label><div class="setting-desc">Seconds between exercises</div></div>
+        <select class="setting-select" id="restSelect" aria-label="Rest timer duration" onchange="saveSetting('restTime', this.value)">
+          <option value="30">30 seconds</option>
+          <option value="60" selected>60 seconds</option>
+          <option value="90">90 seconds</option>
+          <option value="120">2 minutes</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div><label>Reminder Time</label><div class="setting-desc">Daily workout reminder</div></div>
+        <input class="setting-select" id="reminderTime" type="time" value="09:00" onchange="saveSetting('reminderTime', this.value)">
+      </div>
+      <div class="setting-item">
+        <div><label>Push Notifications</label><div class="setting-desc">Daily workout reminders</div></div>
+        <button class="nav-btn" style="flex:none; padding:8px 16px;" onclick="requestNotifications()">Enable</button>
+      </div>
+    </div>
+
+    <div class="settings-group danger-zone">
+      <h3>Data</h3>
+      <div class="setting-item">
+        <div><label>Export History</label><div class="setting-desc">Download workout data as JSON</div></div>
+        <button class="nav-btn" style="flex:none; padding:8px 16px;" onclick="exportData()">Export</button>
+      </div>
+      <div class="setting-item">
+        <div><label>Clear All Data</label><div class="setting-desc">Delete all workouts permanently</div></div>
+        <button class="danger-btn" onclick="clearAllData()">Clear</button>
+      </div>
+    </div>
+
+    <div style="padding-bottom: 80px;"></div>
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+  </div>
+
+  <!-- Help Modal (reusable) -->
+  <div id="helpModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:340px; max-height:80vh; overflow-y:auto;">
+      <h3 id="helpTitle" style="margin-bottom:12px;"></h3>
+      <div id="helpBody" style="font-size:14px; line-height:1.6; color:var(--text-dim);"></div>
+      <button class="btn-primary" style="margin-top:16px;" onclick="closeHelp()">Got it</button>
+    </div>
+  </div>
+
+  <!-- PT SETUP SCREEN -->
+  <div class="screen scrollable" id="ptSetup">
+    <h2>PT Program Setup</h2>
+    <p class="pt-setup-desc">Enter your prescribed exercise program from your physical therapist.</p>
+    <div class="pt-form">
+      <div class="pt-field">
+        <label>Therapist Name</label>
+        <input class="pt-input" id="ptTherapist" type="text" placeholder="Dr. Smith">
+      </div>
+      <div class="pt-field">
+        <label>Your Name</label>
+        <input class="pt-input" id="ptPatient" type="text" placeholder="Your name">
+      </div>
+      <div class="pt-field">
+        <label>Diagnosis / Reason</label>
+        <input class="pt-input" id="ptDiagnosis" type="text" placeholder="e.g., ACL rehab, lower back pain">
+      </div>
+      <div class="pt-field">
+        <label>Prescribed Exercises</label>
+        <div class="pt-exercise-picker" id="ptExPicker">
+          <button class="pt-ex-chip" data-ex="squat" onclick="togglePTExercise(this)">🦵 Squats</button>
+          <button class="pt-ex-chip" data-ex="pushup" onclick="togglePTExercise(this)">💪 Push-Ups</button>
+          <button class="pt-ex-chip" data-ex="lunge" onclick="togglePTExercise(this)">🦿 Lunges</button>
+          <button class="pt-ex-chip" data-ex="plank" onclick="togglePTExercise(this)">🧘 Plank</button>
+          <button class="pt-ex-chip" data-ex="shoulderpress" onclick="togglePTExercise(this)">🏋️ Shoulder Press</button>
+          <button class="pt-ex-chip" data-ex="deadlift" onclick="togglePTExercise(this)">🔥 Deadlift</button>
+        </div>
+      </div>
+      <div class="pt-schedule-row">
+        <div class="pt-field">
+          <label>Days per Week</label>
+          <select class="pt-input" id="ptDaysPerWeek" aria-label="Exercise days per week">
+            <option value="2">2 days</option>
+            <option value="3" selected>3 days</option>
+            <option value="4">4 days</option>
+            <option value="5">5 days</option>
+            <option value="6">6 days</option>
+            <option value="7">Daily</option>
+          </select>
+        </div>
+        <div class="pt-field">
+          <label>Reminder Time</label>
+          <input class="pt-input" id="ptReminderTime" type="time" value="09:00">
+        </div>
+      </div>
+      <button class="btn-primary" style="background:#7c4dff; margin-top:8px;" onclick="savePTProgram()">Start Tracking</button>
+      <button class="btn-secondary" style="margin-top:8px; margin-bottom:80px;" onclick="showScreen('home')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- PT COMPLIANCE DASHBOARD -->
+  <div class="screen scrollable" id="ptDashboard">
+    <h2>PT Dashboard</h2>
+    <div class="compliance-ring" id="complianceRing">
+      <svg viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="60" fill="none" stroke="#252525" stroke-width="10"/>
+        <circle cx="70" cy="70" r="60" fill="none" stroke="#00e676" stroke-width="10"
+          stroke-dasharray="377" stroke-dashoffset="377" stroke-linecap="round" id="compRingCircle"/>
+      </svg>
+      <div style="text-align:center;">
+        <div class="ring-value" id="compPercent">—</div>
+        <div class="ring-label">compliance</div>
+      </div>
+    </div>
+    <div class="compliance-stats">
+      <div class="comp-stat">
+        <div class="cs-value" id="compStreak">0</div>
+        <div class="cs-label">Day Streak</div>
+      </div>
+      <div class="comp-stat">
+        <div class="cs-value" id="compCompleted">0</div>
+        <div class="cs-label">Sessions</div>
+      </div>
+      <div class="comp-stat">
+        <div class="cs-value" id="compMissed">0</div>
+        <div class="cs-label">Missed</div>
+      </div>
+    </div>
+    <div class="exercise-compliance-list" id="exCompList"></div>
+    <div class="pain-trend-card" id="painTrendCard">
+      <h4>Pain Trend (30 days)</h4>
+      <div class="pain-trend-value" id="painTrendValue">No data yet</div>
+      <div id="painTrendDetail" style="font-size:12px; color:var(--text-dim); margin-top:4px;"></div>
+    </div>
+    <div class="pain-trend-card" id="romProgressChart" style="display:none;"></div>
+    <div class="pt-action-row">
+      <button class="pt-action-btn" onclick="showPainModal('daily')">📝 Log Pain</button>
+      <button class="pt-action-btn" onclick="generatePTReport()">📄 Report</button>
+    </div>
+    <div class="pt-action-row">
+      <button class="pt-action-btn" onclick="showModifications()">🔄 Modifications</button>
+      <button class="pt-action-btn" onclick="showScreen('ptSetup')">⚙️ Edit Program</button>
+    </div>
+    <div style="padding-bottom:80px;"></div>
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+  </div>
+
+  <!-- PT REPORT SCREEN -->
+  <div class="screen scrollable" id="ptReport">
+    <h2>Compliance Report</h2>
+    <div class="report-preview" id="reportPreview">
+      <p style="color:#999; text-align:center;">Generating report...</p>
+    </div>
+    <div class="report-actions">
+      <button style="background:#7c4dff; border:none; color:#fff;" onclick="sharePTReport()">Share / Print</button>
+      <button style="background:transparent; border:1px solid var(--surface2); color:var(--text);" onclick="downloadPTReport()">Download</button>
+    </div>
+    <div style="padding-bottom:80px;"></div>
+    <button class="back-btn" onclick="showScreen('ptDashboard')">← Back</button>
+  </div>
+
+  <!-- PAIN INPUT MODAL -->
+  <div class="pain-modal" id="painModal" role="dialog" aria-modal="true" aria-label="Pain level input">
+    <div class="pain-modal-card">
+      <h3>How's your pain?</h3>
+      <div class="pain-context" id="painContext">Rate your current pain level</div>
+      <div class="pain-scale" id="painScale"></div>
+      <select class="pain-location-select" id="painLocation" aria-label="Pain location">
+        <option value="">Select area (optional)</option>
+        <option value="lower-back">Lower Back</option>
+        <option value="upper-back">Upper Back</option>
+        <option value="knee-left">Left Knee</option>
+        <option value="knee-right">Right Knee</option>
+        <option value="shoulder-left">Left Shoulder</option>
+        <option value="shoulder-right">Right Shoulder</option>
+        <option value="hip-left">Left Hip</option>
+        <option value="hip-right">Right Hip</option>
+        <option value="ankle-left">Left Ankle</option>
+        <option value="ankle-right">Right Ankle</option>
+        <option value="neck">Neck</option>
+        <option value="wrist">Wrist</option>
+        <option value="other">Other</option>
+      </select>
+      <textarea class="pain-notes" id="painNotes" placeholder="Any notes? (optional)"></textarea>
+      <div class="pain-submit-row">
+        <button class="pain-skip-btn" onclick="closePainModal()">Skip</button>
+        <button class="pain-submit-btn" onclick="submitPain()">Record</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODIFICATIONS MODAL -->
+  <div class="mod-modal" id="modModal" role="dialog" aria-modal="true" aria-label="Exercise modifications">
+    <div class="mod-card">
+      <h3 id="modTitle">Exercise Modifications</h3>
+      <div id="modList"></div>
+      <button class="btn-secondary" style="margin-top:12px;" onclick="closeModModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- ROUTINE BUILDER SCREEN -->
+  <div class="screen scrollable" id="routineBuilder">
+    <h2>Custom Routine</h2>
+    <input class="routine-name-input" id="routineName" type="text" placeholder="Routine name (e.g., Leg Day)">
+    <div class="rb-queue">
+      <h4>Your Routine (in order)</h4>
+      <div class="rb-queue-list" id="rbQueueList">
+        <div style="color:var(--text-dim); font-size:13px; text-align:center; padding:12px;">Add exercises below</div>
+      </div>
+    </div>
+    <div class="rb-exercise-list">
+      <h4 style="font-size:13px; color:var(--text-dim); text-transform:uppercase; margin-bottom:8px;">Available Exercises</h4>
+      <div class="rb-exercise-item" data-ex="squat"><span class="rb-name">🦵 Squats</span><button class="rb-add-btn" onclick="addToRoutineBuilder('squat','🦵 Squats')">+</button></div>
+      <div class="rb-exercise-item" data-ex="pushup"><span class="rb-name">💪 Push-Ups</span><button class="rb-add-btn" onclick="addToRoutineBuilder('pushup','💪 Push-Ups')">+</button></div>
+      <div class="rb-exercise-item" data-ex="lunge"><span class="rb-name">🦿 Lunges</span><button class="rb-add-btn" onclick="addToRoutineBuilder('lunge','🦿 Lunges')">+</button></div>
+      <div class="rb-exercise-item" data-ex="plank"><span class="rb-name">🧘 Plank</span><button class="rb-add-btn" onclick="addToRoutineBuilder('plank','🧘 Plank')">+</button></div>
+      <div class="rb-exercise-item" data-ex="shoulderpress"><span class="rb-name">🏋️ Shoulder Press</span><button class="rb-add-btn" onclick="addToRoutineBuilder('shoulderpress','🏋️ Shoulder Press')">+</button></div>
+      <div class="rb-exercise-item" data-ex="deadlift"><span class="rb-name">🔥 Deadlift</span><button class="rb-add-btn" onclick="addToRoutineBuilder('deadlift','🔥 Deadlift')">+</button></div>
+    </div>
+    <button class="btn-primary" onclick="saveCustomRoutine()">Save Routine</button>
+    <div class="saved-routines" id="savedRoutines" style="margin-top:20px;"></div>
+    <div style="padding-bottom:80px;"></div>
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+  </div>
+
+  <!-- GUIDED SEQUENCE OVERLAY -->
+  <div class="rest-overlay" id="guidedOverlay">
+    <div id="guidedProgress" style="font-size:12px; color:var(--text-dim); position:absolute; top:24px;">1 / 6</div>
+    <div id="guidedIcon" style="font-size:64px;">🔄</div>
+    <div id="guidedName" style="font-size:24px; font-weight:800;">—</div>
+    <div id="guidedDesc" style="font-size:14px; color:var(--text-dim); max-width:280px; text-align:center;">—</div>
+    <div class="rest-time" id="guidedTime">30</div>
+    <div style="display:flex; gap:12px; margin-top:8px;">
+      <button class="rest-skip" onclick="skipGuidedStep()">Skip →</button>
+      <button class="rest-skip" style="border-color:var(--danger); color:var(--danger);" onclick="endGuidedSequence()">End</button>
+    </div>
+  </div>
+
+  <!-- BODY METRICS SCREEN -->
+  <div class="screen scrollable" id="bodyMetrics">
+    <h2 style="font-size:24px; font-weight:800; margin-bottom:16px; padding-top:16px;">Body Tracker</h2>
+    <div style="background:var(--surface); border-radius:var(--radius); padding:16px; width:100%; max-width:400px; margin-bottom:16px;">
+      <div style="display:flex; gap:10px; align-items:flex-end;">
+        <div style="flex:1;">
+          <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Weight (lbs)</label>
+          <input class="pt-input" id="metricWeight" type="number" step="0.1" placeholder="e.g. 175">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Notes</label>
+          <input class="pt-input" id="metricNotes" type="text" placeholder="optional">
+        </div>
+        <button style="padding:12px 20px; border-radius:8px; border:none; background:var(--accent); color:#000; font-weight:700; cursor:pointer; white-space:nowrap;" onclick="saveBodyMetric()">Log</button>
+      </div>
+    </div>
+    <div style="background:var(--surface); border-radius:var(--radius); padding:16px; width:100%; max-width:400px;" id="metricsChartArea"></div>
+    <div style="padding-bottom:80px;"></div>
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+  </div>
+
+  <!-- PROGRAMS SCREEN -->
+  <div class="screen scrollable" id="programs" style="padding:20px; padding-bottom:100px;">
+    <div class="screen-header"><button class="back-arrow" onclick="showScreen('home')">←</button><h2 style="font-size:22px; font-weight:800;">Programs</h2></div>
+    <div id="activeProgramSection" style="display:none; width:100%; max-width:400px; margin-bottom:20px;">
+      <div style="font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Current Program</div>
+      <div id="activeProgramCard" style="background:var(--surface); border:1px solid #7c3aed; border-radius:var(--radius); padding:16px;"></div>
+    </div>
+    <div style="font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; width:100%; max-width:400px;">Browse Programs</div>
+    <div style="display:flex; gap:8px; margin-bottom:16px; width:100%; max-width:400px; flex-wrap:wrap;">
+      <button class="filter-chip active" onclick="filterPrograms('all',this)">All</button>
+      <button class="filter-chip" onclick="filterPrograms('strength',this)">Strength</button>
+      <button class="filter-chip" onclick="filterPrograms('rehab',this)">Rehab</button>
+      <button class="filter-chip" onclick="filterPrograms('free',this)">Free</button>
+    </div>
+    <div id="programLibrary" style="width:100%; max-width:400px; display:flex; flex-direction:column; gap:12px;"></div>
+  </div>
+
+  <!-- HIIT SCREEN -->
+  <div class="screen scrollable" id="hiitScreen" style="padding:20px; padding-bottom:100px;">
+    <div class="screen-header"><button class="back-arrow" onclick="showScreen('home')">←</button><h2 style="font-size:22px; font-weight:800;">HIIT Workouts</h2></div>
+    <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; max-width:400px;">High-Intensity Interval Training. Pick a program and push your limits.</p>
+    <div id="hiitLibrary" style="width:100%; max-width:400px; display:flex; flex-direction:column; gap:12px;"></div>
+  </div>
+
+  <!-- HIIT ACTIVE SESSION -->
+  <div class="screen" id="hiitActive" style="background:#000; align-items:center; justify-content:center; text-align:center; gap:16px;">
+    <div id="hiitPhaseLabel" style="font-size:14px; color:var(--text-dim); text-transform:uppercase; letter-spacing:2px;">WORK</div>
+    <div id="hiitTimer" style="font-size:96px; font-weight:900; color:var(--accent); line-height:1;">20</div>
+    <div id="hiitExercise" style="font-size:22px; font-weight:700;">Squats</div>
+    <div id="hiitRound" style="font-size:14px; color:var(--text-dim);">Round 1 / 8</div>
+    <div style="display:flex; gap:12px; margin-top:20px;">
+      <button class="ctrl-btn pause" onclick="toggleHIITPause()" id="hiitPauseBtn">⏸</button>
+      <button class="ctrl-btn stop" onclick="stopHIIT()">⏹</button>
+    </div>
+  </div>
+
+  <!-- ANALYTICS SCREEN -->
+  <div class="screen scrollable" id="analyticsScreen" style="padding:20px; padding-bottom:100px;">
+    <div class="screen-header"><button class="back-arrow" onclick="showScreen('home')">←</button><h2 style="font-size:22px; font-weight:800;">Analytics</h2></div>
+    <!-- Fitness Score -->
+    <div id="fitnessScoreCard" style="width:100%; max-width:400px; background:var(--surface); border-radius:var(--radius); padding:20px; margin-bottom:16px; text-align:center;">
+      <div style="font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Fitness Score</div>
+      <div id="fitnessScoreValue" style="font-size:64px; font-weight:900; color:var(--accent); line-height:1.1;">0</div>
+      <div id="fitnessScoreTier" style="font-size:14px; font-weight:600; margin-top:4px;">Starter</div>
+      <div id="fitnessScoreBreakdown" style="display:flex; justify-content:space-around; margin-top:16px; font-size:12px;"></div>
+    </div>
+    <!-- Activity Heatmap -->
+    <div style="width:100%; max-width:400px; background:var(--surface); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div style="font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Activity (12 weeks)</div>
+      <div id="heatmapGrid" style="display:flex; flex-wrap:wrap; gap:3px;"></div>
+    </div>
+    <!-- Body Radar -->
+    <div style="width:100%; max-width:400px; background:var(--surface); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div style="font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Body Strength Map</div>
+      <div id="bodyRadarChart" style="display:flex; flex-direction:column; gap:6px;"></div>
+    </div>
+    <!-- Flexibility -->
+    <div style="width:100%; max-width:400px; background:var(--surface); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div style="font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Flexibility Scores</div>
+      <div id="flexScores" style="display:flex; flex-direction:column; gap:6px;"></div>
+    </div>
+    <!-- Volume Stats -->
+    <div style="width:100%; max-width:400px; background:var(--surface); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div style="font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Volume This Week</div>
+      <div id="volumeStats"></div>
+    </div>
+    <!-- Recommendations -->
+    <div style="width:100%; max-width:400px; background:var(--surface); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+      <div style="font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Recommendations</div>
+      <div id="recommendationsList" style="font-size:13px; line-height:1.5;"></div>
+    </div>
+  </div>
+
+  <!-- VIDEO UPLOAD SCREEN -->
+  <div class="screen scrollable" id="videoUpload" style="padding:20px; padding-bottom:100px; align-items:center;">
+    <div class="screen-header" style="width:100%; max-width:400px;"><button class="back-arrow" onclick="showScreen('home')">←</button><h2 style="font-size:22px; font-weight:800;">Video Analysis</h2></div>
+    <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; max-width:400px; text-align:center;">Upload a workout video and we'll analyze your form frame-by-frame.</p>
+    <div style="width:100%; max-width:400px; background:var(--surface); border:2px dashed var(--surface2); border-radius:var(--radius); padding:40px 20px; text-align:center; cursor:pointer; transition:all 0.2s;" onclick="document.getElementById('videoFileInput').click()" id="videoDropZone">
+      <div style="font-size:48px;">📹</div>
+      <div style="font-size:16px; font-weight:600; margin-top:8px;">Tap to Upload Video</div>
+      <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">MP4, MOV, or WebM — Max 500MB</div>
+      <input type="file" id="videoFileInput" accept="video/*" style="display:none;" onchange="handleVideoUpload(this)">
+    </div>
+    <div id="videoAnalysisSetup" style="display:none; width:100%; max-width:400px; margin-top:16px;">
+      <div style="background:var(--surface); border-radius:var(--radius); padding:16px;">
+        <div id="videoFileName" style="font-size:14px; font-weight:600; margin-bottom:8px;"></div>
+        <div id="videoMeta" style="font-size:12px; color:var(--text-dim); margin-bottom:12px;"></div>
+        <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Exercise Type</label>
+        <select id="videoExerciseSelect" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--surface2); background:var(--surface2); color:var(--text); font-size:14px; margin-bottom:12px;">
+          <option value="squat">Squats</option>
+          <option value="pushup">Push-Ups</option>
+          <option value="lunge">Lunges</option>
+          <option value="shoulderpress">Shoulder Press</option>
+          <option value="deadlift">Deadlift</option>
+          <option value="plank">Plank</option>
+        </select>
+        <button class="btn-primary" onclick="startVideoAnalysis()" id="startAnalysisBtn">Analyze Video</button>
+      </div>
+    </div>
+    <div id="videoProgressArea" style="display:none; width:100%; max-width:400px; margin-top:16px; text-align:center;">
+      <div style="font-size:14px; font-weight:600; margin-bottom:8px;">Analyzing...</div>
+      <div style="height:8px; background:var(--surface2); border-radius:4px; overflow:hidden;">
+        <div id="videoProgressBar" style="height:100%; background:var(--accent); border-radius:4px; width:0%; transition:width 0.3s;"></div>
+      </div>
+      <div id="videoProgressPct" style="font-size:12px; color:var(--text-dim); margin-top:4px;">0%</div>
+    </div>
+    <div id="videoResultsArea" style="display:none; width:100%; max-width:400px; margin-top:16px;"></div>
+  </div>
+
+  <!-- RECOVERY SCREEN -->
+  <div class="screen scrollable" id="recoveryScreen" style="padding:20px; padding-bottom:100px;">
+    <div class="screen-header"><button class="back-arrow" onclick="showScreen('home')">←</button><h2 style="font-size:22px; font-weight:800;">Recovery & Mobility</h2></div>
+    <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; max-width:400px;">Guided stretching with science-backed hold times.</p>
+    <div id="mobilityRoutines" style="width:100%; max-width:400px; display:flex; flex-direction:column; gap:12px;"></div>
+  </div>
+
+  <!-- EXERCISE SCIENCE MODAL -->
+  <div id="scienceModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:300; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--surface); border-radius:var(--radius); padding:24px; max-width:400px; width:100%; max-height:80vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 id="scienceModalTitle" style="font-size:18px; font-weight:800;">Exercise Science</h3>
+        <button onclick="closeScienceModal()" style="background:none; border:none; color:var(--text-dim); font-size:24px; cursor:pointer;">✕</button>
+      </div>
+      <div id="scienceModalContent" style="font-size:13px; line-height:1.6; color:var(--text-dim);"></div>
+    </div>
+  </div>
+
+  <!-- INSTALL BANNER -->
+  <div class="install-banner" id="installBanner">
+    <p>Add PhysioRep to your home screen for the full experience</p>
+    <button onclick="installApp()">Install</button>
+  </div>
+
+  <!-- MEDIAPIPE CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous" integrity="sha384-q1KhAZhJcJXr3zfC3Tz07pBqQSabwFIZhXlmlUAB8s0zk4ETWERkIKGBCFQ5Jc3e"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous" integrity="sha384-W/7NVG2tfN12ld8faSFVOZ/W4UHFHze98GqEUPTl8EjY9QDwCKQIzoCHp8/IlIIr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous" integrity="sha384-qcJQ+n/ZcF15Xu2EoRupB4Av+GEAGeW0Td1mp2A90u0NdNLzLYQVMUq1Ax1YAHqk"></script>
+
+  <script src="src/exercise-engine.js"></script>
+  <script src="src/exercise-library.js"></script>
+  <script src="src/audio.js"></script>
+  <script src="src/db.js"></script>
+  <script src="src/achievements.js"></script>
+  <script src="src/pt-mode.js"></script>
+  <script src="src/vitals.js"></script>
+  <script src="src/challenges.js"></script>
+  <script src="src/programs.js"></script>
+  <script src="src/voice-coach.js"></script>
+  <script src="src/analytics.js"></script>
+  <script src="src/recovery.js"></script>
+  <script src="src/hiit.js"></script>
+  <script src="src/video-analyzer.js"></script>
+  <script src="src/tempo.js"></script>
+  <script src="src/xp-system.js"></script>
+  <script src="src/share-cards.js"></script>
+  <script src="src/rest-timer.js"></script>
+  <script src="src/adaptive.js"></script>
+  <script src="src/health-sync.js"></script>
+  <script src="src/form-hud.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="24" fill="#0a0a0a"/>
+  <text x="96" y="78" text-anchor="middle" font-family="system-ui, sans-serif" font-size="48" font-weight="800" fill="#ffffff">P</text>
+  <text x="96" y="78" text-anchor="middle" font-family="system-ui, sans-serif" font-size="48" font-weight="800" fill="#00e676" opacity="0.8">P</text>
+  <!-- Stylized body/pose lines -->
+  <line x1="96" y1="90" x2="96" y2="130" stroke="#00e676" stroke-width="4" stroke-linecap="round"/>
+  <line x1="96" y1="100" x2="76" y2="115" stroke="#00e676" stroke-width="3" stroke-linecap="round"/>
+  <line x1="96" y1="100" x2="116" y2="115" stroke="#00e676" stroke-width="3" stroke-linecap="round"/>
+  <line x1="96" y1="130" x2="80" y2="155" stroke="#00e676" stroke-width="3" stroke-linecap="round"/>
+  <line x1="96" y1="130" x2="112" y2="155" stroke="#00e676" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="96" cy="84" r="8" fill="#00e676"/>
+  <text x="96" y="178" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#aaa">PhysioRep</text>
+</svg>

@@ -1,0 +1,21 @@
+{
+  "name": "physiorep",
+  "version": "1.0.0",
+  "description": "Home workout form tracker PWA with camera-based pose feedback",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "npx serve . -l 3000",
+    "test": "npx jest --config jest.config.js",
+    "lint": "npx eslint src/ --ext .js",
+    "lighthouse": "bash scripts/lighthouse.sh",
+    "validate": "bash scripts/validate-all.sh"
+  },
+  "keywords": ["fitness", "pose-estimation", "pwa", "mediapipe", "workout", "form-tracker"],
+  "author": "Joneil Caoile",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}

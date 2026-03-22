@@ -1,10 +1,5 @@
 // Health sync — integrates wearable and manual health data
- * Supported data sources:
- * - Apple Health (via Web Health API, when available in Safari)
- * - Google Fit (via Fitness REST API with OAuth)
- * - Manual input (always available as fallback)
- * - In-app rPPG vitals (from vitals.js)
- */
+// Sources: Apple Health, Google Fit, manual input, in-app rPPG
 
 const HEALTH_STORAGE_KEY = 'physiorep_health_data';
 

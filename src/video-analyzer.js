@@ -26,14 +26,17 @@ class VideoAnalyzer {
    * @returns {Promise<Object>} Video metadata { duration, width, height }
    */
   async loadVideo(file) {
+    const ALLOWED_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v'];
+    const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+    const LOAD_TIMEOUT = 30000; // 30s
+
     return new Promise((resolve, reject) => {
-      if (!file || !file.type.startsWith('video/')) {
-        reject(new Error('Invalid file type. Please upload a video file.'));
+      if (!file || !ALLOWED_TYPES.includes(file.type)) {
+        reject(new Error('Unsupported format. Please upload MP4, WebM, or MOV.'));
         return;
       }
 
-      // Size limit: 500MB
-      if (file.size > 500 * 1024 * 1024) {
+      if (file.size > MAX_FILE_SIZE) {
         reject(new Error('Video too large. Max 500MB.'));
         return;
       }
@@ -45,7 +48,14 @@ class VideoAnalyzer {
       const url = URL.createObjectURL(file);
       this.video.src = url;
 
+      // Timeout if video fails to decode
+      const timeout = setTimeout(() => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Video load timed out. Try a shorter clip.'));
+      }, LOAD_TIMEOUT);
+
       this.video.onloadedmetadata = () => {
+        clearTimeout(timeout);
         // Create offscreen canvas matching video dimensions
         this.canvas = document.createElement('canvas');
         this.canvas.width = this.video.videoWidth;
@@ -62,6 +72,7 @@ class VideoAnalyzer {
       };
 
       this.video.onerror = () => {
+        clearTimeout(timeout);
         URL.revokeObjectURL(url);
         reject(new Error('Failed to load video. Format may not be supported.'));
       };

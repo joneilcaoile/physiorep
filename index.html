@@ -1446,6 +1446,13 @@
       </div>
     </div>
 
+    <div class="settings-group">
+      <h3>Privacy</h3>
+      <div class="setting-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
+        <p style="font-size:13px;color:var(--text-dim);line-height:1.5;">All your data stays on this device. PhysioRep has no server, no accounts, and no analytics. Workout history, vitals, and settings are stored in your browser's IndexedDB. If you share this device with others, they could access your data through this app. Use <strong>Clear All Data</strong> above to remove everything.</p>
+      </div>
+    </div>
+
     <div style="padding-bottom: 80px;"></div>
     <button class="back-btn" onclick="showScreen('home')">← Back</button>
   </div>
@@ -1802,9 +1809,9 @@
   </div>
 
   <!-- MEDIAPIPE CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous" integrity="sha384-q1KhAZhJcJXr3zfC3Tz07pBqQSabwFIZhXlmlUAB8s0zk4ETWERkIKGBCFQ5Jc3e"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous" integrity="sha384-W/7NVG2tfN12ld8faSFVOZ/W4UHFHze98GqEUPTl8EjY9QDwCKQIzoCHp8/IlIIr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous" integrity="sha384-qcJQ+n/ZcF15Xu2EoRupB4Av+GEAGeW0Td1mp2A90u0NdNLzLYQVMUq1Ax1YAHqk"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous" integrity="sha384-q1KhAZhJcJXr3zfC3Tz07pBqQSabwFIZhXlmlUAB8s0zk4ETWERkIKGBCFQ5Jc3e"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js" crossorigin="anonymous" integrity="sha384-W/7NVG2tfN12ld8faSFVOZ/W4UHFHze98GqEUPTl8EjY9QDwCKQIzoCHp8/IlIIr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous" integrity="sha384-qcJQ+n/ZcF15Xu2EoRupB4Av+GEAGeW0Td1mp2A90u0NdNLzLYQVMUq1Ax1YAHqk"></script>
 
   <script src="src/exercise-engine.js"></script>
   <script src="src/exercise-library.js"></script>

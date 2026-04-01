@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net; worker-src 'self'; font-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self'; font-src 'self' https://fonts.gstatic.com">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#00e676">
+  <meta name="theme-color" content="#0A9B8C">
   <meta name="description" content="PhysioRep — camera-based workout form tracker with pose feedback and voice coaching">
   <!-- Open Graph -->
   <meta property="og:title" content="PhysioRep - AI-Powered Bodyweight Exercise Coach">
@@ -22,19 +22,31 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>PhysioRep</title>
-  <style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
     /* RESET & BASE */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0a0a0a; --surface: #1a1a1a; --surface2: #252525;
-      --accent: #00e676; --accent-dim: #00c853; --danger: #ff5252;
-      --warn: #ffab40; --text: #f5f5f5; --text-dim: #aaa;
-      --radius: 12px; --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      /* Clean Clinical Design System v2 */
+      --bg: #F7F8FA; --surface: #FFFFFF; --surface2: #EEF1F5;
+      --accent: #0A9B8C; --accent-dim: #088577; --accent-light: #E6F7F5;
+      --danger: #DC3545; --warn: #E6920A; --success: #22A867;
+      --text: #1A1D23; --text-dim: #5A6175; --text-muted: #8B92A5;
+      --radius: 12px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03);
+      --shadow-md: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-card: 0 1px 4px rgba(0,0,0,0.05);
+      --border: #E2E6EC;
     }
     html, body { height: 100%; overflow: hidden; }
     body {
       font-family: var(--font); background: var(--bg); color: var(--text);
       display: flex; flex-direction: column; touch-action: manipulation;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     }
 
     /* SCREENS */
@@ -63,37 +75,38 @@
     .section-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; width: 100%; max-width: 360px; margin-top: 20px; margin-bottom: 8px; }
     .exercise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 360px; }
     .exercise-card {
-      background: var(--surface); border: 1px solid var(--surface2); border-radius: var(--radius);
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 16px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+      box-shadow: var(--shadow-card);
     }
     .exercise-card:hover, .exercise-card:active {
       border-color: var(--accent); transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(0, 230, 118, 0.12);
+      box-shadow: var(--shadow-md);
     }
     .exercise-card .card-icon { font-size: 24px; margin-bottom: 6px; }
     .exercise-card h3 { font-size: 15px; margin-bottom: 2px; }
     .exercise-card p { font-size: 11px; color: var(--text-dim); line-height: 1.3; }
     .exercise-card .card-badge {
       position: absolute; top: 8px; right: 8px; font-size: 9px; background: var(--accent);
-      color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 700;
+      color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: 700;
     }
 
     /* Quick Start Routine */
     .routine-card {
-      background: linear-gradient(135deg, #1a2a1a 0%, var(--surface) 100%);
+      background: var(--surface);
       border: 1px solid var(--accent); border-radius: var(--radius);
       padding: 16px; width: 100%; max-width: 360px; cursor: pointer; transition: all 0.2s;
       margin-top: 4px;
     }
-    .routine-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0, 230, 118, 0.2); }
-    .routine-card h3 { font-size: 16px; color: var(--accent); margin-bottom: 4px; }
+    .routine-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .routine-card h3 { font-size: 16px; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
     .routine-card p { font-size: 12px; color: var(--text-dim); }
 
     .nav-row { display: flex; gap: 10px; width: 100%; max-width: 360px; margin-top: 16px; padding-bottom: 24px; }
     .nav-btn {
-      flex: 1; padding: 12px; border-radius: var(--radius); border: 1px solid var(--surface2);
+      flex: 1; padding: 12px; border-radius: var(--radius); border: 1px solid var(--border);
       background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600;
-      cursor: pointer; text-align: center; transition: all 0.2s;
+      cursor: pointer; text-align: center; transition: all 0.2s; box-shadow: var(--shadow-sm);
     }
     .nav-btn:hover { border-color: var(--accent); }
 
@@ -106,7 +119,7 @@
     .countdown-overlay.active { display: flex; }
     .countdown-number {
       font-size: 120px; font-weight: 900; color: var(--accent); line-height: 1;
-      animation: countPulse 1s ease-in-out;
+      animation: countPulse 1s ease-in-out; font-family: var(--font-mono);
     }
     .countdown-label { font-size: 16px; color: var(--text-dim); }
     @keyframes countPulse { 0% { transform: scale(1.3); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
@@ -130,7 +143,7 @@
     .hud-left .timer { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
     .hud-left .fps { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
     .hud-right { text-align: right; }
-    .rep-count { font-size: 64px; font-weight: 900; color: var(--accent); line-height: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .rep-count { font-size: 64px; font-weight: 900; color: var(--accent); line-height: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.5); font-family: var(--font-mono); }
     .rep-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
 
     .form-feedback {
@@ -139,9 +152,9 @@
       z-index: 10; transition: all 0.3s; opacity: 0; pointer-events: none;
       text-align: center; max-width: 90%; letter-spacing: 0.3px;
     }
-    .form-feedback.good { opacity: 1; background: rgba(0, 230, 118, 0.9); color: #000; }
-    .form-feedback.bad { opacity: 1; background: rgba(255, 82, 82, 0.9); color: #fff; }
-    .form-feedback.warn { opacity: 1; background: rgba(255, 171, 64, 0.9); color: #000; }
+    .form-feedback.good { opacity: 1; background: rgba(10, 155, 140, 0.92); color: #fff; }
+    .form-feedback.bad { opacity: 1; background: rgba(220, 53, 69, 0.92); color: #fff; }
+    .form-feedback.warn { opacity: 1; background: rgba(230, 146, 10, 0.92); color: #fff; }
     .form-feedback.milestone { opacity: 1; background: rgba(255, 215, 0, 0.95); color: #000; font-size: 18px; }
 
     .workout-controls {
@@ -176,12 +189,12 @@
     .summary-subtitle { font-size: 13px; color: var(--text-dim); margin-top: -8px; }
     .summary-card {
       background: var(--surface); border-radius: var(--radius); padding: 20px;
-      width: 100%; max-width: 360px;
+      width: 100%; max-width: 360px; border: 1px solid var(--border); box-shadow: var(--shadow-card);
     }
-    .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--surface2); }
+    .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .stat-row:last-child { border-bottom: none; }
     .stat-label { color: var(--text-dim); font-size: 14px; }
-    .stat-value { font-weight: 700; font-size: 18px; }
+    .stat-value { font-weight: 700; font-size: 18px; font-family: var(--font-mono); }
     .stat-value.good { color: var(--accent); }
     .stat-value.ok { color: var(--warn); }
     .stat-value.bad { color: var(--danger); }
@@ -195,7 +208,7 @@
 
     .tips-card { background: var(--surface); border-radius: var(--radius); padding: 20px; width: 100%; max-width: 360px; }
     .tips-card h4 { font-size: 14px; color: var(--text-dim); margin-bottom: 8px; }
-    .tip-item { font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--surface2); line-height: 1.4; }
+    .tip-item { font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); line-height: 1.4; }
     .tip-item:last-child { border-bottom: none; }
 
     .form-issues { margin-top: 12px; }
@@ -206,13 +219,13 @@
     }
     .btn-primary {
       width: 100%; max-width: 360px; padding: 16px; border-radius: var(--radius);
-      border: none; background: var(--accent); color: #000; font-size: 16px;
-      font-weight: 700; cursor: pointer; transition: all 0.2s;
+      border: none; background: var(--accent); color: #fff; font-size: 16px;
+      font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: var(--shadow-sm);
     }
     .btn-primary:hover { background: var(--accent-dim); }
     .btn-secondary {
       width: 100%; max-width: 360px; padding: 14px; border-radius: var(--radius);
-      border: 1px solid var(--surface2); background: transparent; color: var(--text);
+      border: 1px solid var(--border); background: transparent; color: var(--text);
       font-size: 14px; cursor: pointer;
     }
 
@@ -222,15 +235,16 @@
     .history-header h2 { font-size: 24px; font-weight: 800; }
     .history-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
     .history-tab {
-      padding: 8px 16px; border-radius: 8px; border: 1px solid var(--surface2);
+      padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
       background: transparent; color: var(--text-dim); font-size: 13px; cursor: pointer;
     }
-    .history-tab.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+    .history-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
     .history-empty { color: var(--text-dim); text-align: center; margin-top: 60px; font-size: 14px; }
     .history-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 100px; }
     .history-item {
       background: var(--surface); border-radius: var(--radius); padding: 14px;
       display: flex; justify-content: space-between; align-items: center;
+      border: 1px solid var(--border); box-shadow: var(--shadow-card);
     }
     .history-item .hi-left h3 { font-size: 15px; }
     .history-item .hi-left p { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
@@ -239,7 +253,7 @@
     .history-item .hi-score { font-size: 11px; }
 
     /* Progress Chart */
-    .chart-container { background: var(--surface); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+    .chart-container { background: var(--surface); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-card); }
     .chart-container h3 { font-size: 14px; color: var(--text-dim); margin-bottom: 12px; }
     .mini-chart { display: flex; align-items: flex-end; gap: 4px; height: 80px; }
     .chart-bar {
@@ -256,14 +270,14 @@
     .records-row { display: flex; gap: 8px; margin-bottom: 16px; }
     .record-card {
       flex: 1; background: var(--surface); border-radius: var(--radius); padding: 12px;
-      text-align: center;
+      text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow-card);
     }
-    .record-card .record-value { font-size: 22px; font-weight: 800; color: var(--accent); }
+    .record-card .record-value { font-size: 22px; font-weight: 800; color: var(--accent); font-family: var(--font-mono); }
     .record-card .record-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* Streak */
     .streak-banner {
-      background: linear-gradient(135deg, #1a2a1a 0%, var(--surface) 100%);
+      background: var(--surface);
       border: 1px solid var(--accent); border-radius: var(--radius);
       padding: 14px; text-align: center; margin-bottom: 16px;
     }
@@ -272,7 +286,7 @@
 
     .back-btn {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      padding: 12px 28px; border-radius: var(--radius); border: 1px solid var(--surface2);
+      padding: 12px 28px; border-radius: var(--radius); border: 1px solid var(--border);
       background: var(--surface); color: var(--text); font-size: 14px; font-weight: 600;
       cursor: pointer; z-index: 20;
     }
@@ -284,7 +298,7 @@
     .settings-group h3 { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
     .setting-item {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 0; border-bottom: 1px solid var(--surface2);
+      padding: 14px 0; border-bottom: 1px solid var(--border);
     }
     .setting-item label { font-size: 15px; }
     .setting-item .setting-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
@@ -299,7 +313,7 @@
     }
     .toggle.on::after { transform: translateX(22px); }
     .setting-select {
-      background: var(--surface2); border: none; color: var(--text); padding: 8px 12px;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px;
       border-radius: 8px; font-size: 14px;
     }
     .danger-zone { margin-top: 32px; }
@@ -313,7 +327,7 @@
     #routineBuilder h2 { font-size: 24px; font-weight: 800; margin-bottom: 16px; }
     .routine-name-input {
       width: 100%; max-width: 400px; padding: 12px; border-radius: 8px;
-      border: 1px solid var(--surface2); background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
       font-size: 16px; font-family: var(--font); margin-bottom: 16px;
     }
     .routine-name-input:focus { outline: none; border-color: var(--accent); }
@@ -321,7 +335,7 @@
     .rb-exercise-item {
       display: flex; align-items: center; justify-content: space-between;
       background: var(--surface); border-radius: 8px; padding: 12px; margin-bottom: 8px;
-      cursor: grab; border: 1px solid var(--surface2);
+      cursor: grab; border: 1px solid var(--border);
     }
     .rb-exercise-item.in-routine { border-color: var(--accent); background: #1a2a1a; }
     .rb-exercise-item .rb-name { font-size: 14px; font-weight: 600; }
@@ -344,7 +358,7 @@
     .saved-routine-card {
       background: var(--surface); border-radius: var(--radius); padding: 14px;
       margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-      border: 1px solid var(--surface2); cursor: pointer; transition: all 0.2s;
+      border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
     }
     .saved-routine-card:hover { border-color: var(--accent); }
     .saved-routine-card .sr-name { font-size: 15px; font-weight: 600; }
@@ -357,11 +371,11 @@
     .install-banner {
       display: none; position: fixed; bottom: 16px; left: 16px; right: 16px;
       background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius);
-      padding: 16px; z-index: 100; text-align: center;
+      padding: 16px; z-index: 100; text-align: center; box-shadow: var(--shadow-lg, 0 4px 16px rgba(0,0,0,0.08));
     }
     .install-banner.show { display: block; }
     .install-banner p { font-size: 13px; margin-bottom: 10px; }
-    .install-banner button { padding: 10px 24px; border-radius: 8px; border: none; background: var(--accent); color: #000; font-weight: 700; cursor: pointer; }
+    .install-banner button { padding: 10px 24px; border-radius: 8px; border: none; background: var(--accent); color: #fff; font-weight: 700; cursor: pointer; }
 
     /* LOADING OVERLAY */
     .loading-overlay {
@@ -369,6 +383,7 @@
       flex-direction: column; align-items: center; justify-content: center;
       z-index: 200; gap: 16px;
     }
+    .spinner { border: 3px solid var(--border); border-top-color: var(--accent); }
     .loading-overlay.hidden { display: none; }
     .spinner { width: 40px; height: 40px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -383,7 +398,7 @@
     .rest-overlay.active { display: flex; }
     .rest-time { font-size: 80px; font-weight: 900; color: var(--accent); }
     .rest-label { font-size: 16px; color: var(--text-dim); }
-    .rest-skip { padding: 12px 28px; border-radius: var(--radius); border: 1px solid var(--surface2); background: transparent; color: var(--text); font-size: 14px; cursor: pointer; margin-top: 16px; }
+    .rest-skip { padding: 12px 28px; border-radius: var(--radius); border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 14px; cursor: pointer; margin-top: 16px; }
 
     /* ERROR TOAST */
     .error-toast {
@@ -401,12 +416,12 @@
       font-weight: 700; display: inline-block; margin-bottom: 4px;
     }
     .pt-card {
-      background: linear-gradient(135deg, #1a1a2e 0%, var(--surface) 100%);
+      background: var(--surface);
       border: 1px solid #7c4dff; border-radius: var(--radius);
       padding: 16px; width: 100%; max-width: 360px; cursor: pointer; transition: all 0.2s;
       margin-top: 4px;
     }
-    .pt-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124, 77, 255, 0.2); }
+    .pt-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
     .pt-card h3 { font-size: 16px; color: #b388ff; margin-bottom: 4px; }
     .pt-card p { font-size: 12px; color: var(--text-dim); }
 
@@ -418,13 +433,13 @@
     .pt-field { margin-bottom: 16px; }
     .pt-field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; }
     .pt-input {
-      width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--surface2);
+      width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);
       background: var(--surface); color: var(--text); font-size: 15px; font-family: var(--font);
     }
     .pt-input:focus { outline: none; border-color: #7c4dff; }
     .pt-exercise-picker { display: flex; flex-wrap: wrap; gap: 8px; }
     .pt-ex-chip {
-      padding: 8px 14px; border-radius: 20px; border: 1px solid var(--surface2);
+      padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border);
       background: transparent; color: var(--text-dim); font-size: 13px; cursor: pointer;
       transition: all 0.2s;
     }
@@ -434,7 +449,7 @@
 
     /* Pain Modal */
     .pain-modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: none;
       flex-direction: column; align-items: center; justify-content: center;
       z-index: 260; gap: 16px; padding: 24px;
     }
@@ -453,22 +468,22 @@
     }
     .pain-btn:hover { border-color: #7c4dff; }
     .pain-btn.selected { background: #7c4dff; border-color: #7c4dff; color: #fff; }
-    .pain-btn.low { border-color: #00e676; }
-    .pain-btn.mid { border-color: #ffab40; }
-    .pain-btn.high { border-color: #ff5252; }
+    .pain-btn.low { border-color: var(--success, #22A867); }
+    .pain-btn.mid { border-color: var(--warn); }
+    .pain-btn.high { border-color: var(--danger); }
     .pain-location-select {
-      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--surface2);
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
       background: var(--surface2); color: var(--text); font-size: 14px; margin-bottom: 12px;
     }
     .pain-notes {
-      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--surface2);
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
       background: var(--surface); color: var(--text); font-size: 14px; resize: none;
       height: 60px; font-family: var(--font); margin-bottom: 16px;
     }
     .pain-submit-row { display: flex; gap: 10px; }
     .pain-submit-row button { flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
     .pain-submit-btn { background: #7c4dff; border: none; color: #fff; }
-    .pain-skip-btn { background: transparent; border: 1px solid var(--surface2); color: var(--text); }
+    .pain-skip-btn { background: transparent; border: 1px solid var(--border); color: var(--text); }
 
     /* Compliance Dashboard */
     #ptDashboard { padding: 24px; padding-top: 40px; overflow-y: auto; }
@@ -500,8 +515,8 @@
     }
     .pain-trend-card h4 { font-size: 14px; color: var(--text-dim); margin-bottom: 8px; }
     .pain-trend-value { font-size: 18px; font-weight: 700; }
-    .pain-trend-value.improving { color: #00e676; }
-    .pain-trend-value.worsening { color: #ff5252; }
+    .pain-trend-value.improving { color: var(--success, #22A867); }
+    .pain-trend-value.worsening { color: var(--danger); }
     .pain-trend-value.stable { color: var(--warn); }
     .pt-action-row { display: flex; gap: 10px; width: 100%; max-width: 400px; margin-bottom: 16px; }
     .pt-action-btn {
@@ -518,7 +533,7 @@
       background: #fff; color: #333; border-radius: var(--radius); padding: 20px;
       width: 100%; max-width: 400px; margin-bottom: 16px; font-size: 13px; line-height: 1.6;
     }
-    .report-preview h3 { color: #00c853; font-size: 18px; margin-bottom: 8px; }
+    .report-preview h3 { color: #0A9B8C; font-size: 18px; margin-bottom: 8px; }
     .report-preview .rp-meta { color: #666; font-size: 12px; margin-bottom: 12px; }
     .report-preview .rp-score { font-size: 36px; font-weight: 900; margin-bottom: 8px; }
     .report-actions { display: flex; gap: 10px; width: 100%; max-width: 400px; }
@@ -526,7 +541,7 @@
 
     /* Modifications Modal */
     .mod-modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: none;
       flex-direction: column; align-items: center; justify-content: center;
       z-index: 260; gap: 16px; padding: 24px;
     }
@@ -556,7 +571,7 @@
     }
     #hrDisplay {
       top: 80px;
-      color: #ff5252;
+      color: var(--danger);
     }
     #hrDisplay.low-confidence {
       opacity: 0.5;
@@ -615,7 +630,7 @@
     }
     .challenge-progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--primary), #7c4dff);
+      background: linear-gradient(90deg, var(--accent), #088577);
       border-radius: 3px;
       transition: width 0.3s ease;
     }
@@ -629,7 +644,7 @@
       display: flex;
       justify-content: space-between;
       padding: 10px 0;
-      border-bottom: 1px solid var(--surface2);
+      border-bottom: 1px solid var(--border);
       font-size: 13px;
     }
 
@@ -643,7 +658,7 @@
       margin-bottom: 6px;
     }
     .leaderboard-row.leaderboard-me {
-      background: linear-gradient(135deg, rgba(0,230,118,0.1), rgba(124,77,255,0.1));
+      background: var(--accent-light);
       border: 1px solid var(--primary);
     }
     .leaderboard-rank {
@@ -689,7 +704,7 @@
     /* ACCESSIBILITY */
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .exercise-card:focus-visible, .routine-card:focus-visible, .pt-card:focus-visible {
-      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.3);
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10, 155, 140, 0.25);
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
@@ -722,7 +737,9 @@
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -730,10 +747,10 @@
     }
     .modal-box {
       background: var(--surface);
-      border: 1px solid var(--surface2);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 24px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     }
     .modal-box h3 {
       font-size: 18px;
@@ -756,7 +773,7 @@
       align-items: center;
       padding: 14px 16px;
       background: var(--surface);
-      border: 1px solid var(--surface2);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       color: var(--text-dim);
       font-size: 14px;
@@ -770,11 +787,11 @@
     .nerd-content {
       padding: 16px;
       background: var(--surface);
-      border: 1px solid var(--surface2);
+      border: 1px solid var(--border);
       border-top: none;
       border-radius: 0 0 var(--radius) var(--radius);
       font-size: 12px;
-      font-family: 'Courier New', monospace;
+      font-family: var(--font-mono);
       color: var(--text-dim);
       line-height: 1.6;
     }
@@ -782,7 +799,7 @@
       display: flex;
       justify-content: space-between;
       padding: 4px 0;
-      border-bottom: 1px solid var(--surface2);
+      border-bottom: 1px solid var(--border);
     }
     .nerd-row:last-child {
       border-bottom: none;
@@ -804,7 +821,7 @@
     /* LEVEL SELECTION */
     .level-btn.selected {
       border-color: var(--accent) !important;
-      background: rgba(0, 230, 118, 0.08) !important;
+      background: var(--accent-light) !important;
     }
 
     .setting-label {
@@ -819,11 +836,12 @@
       width: 100%;
       max-width: 360px;
       background: var(--surface);
-      border: 1px solid var(--surface2);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
       margin-top: 20px;
       margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
     }
     .tab-bar-item {
       flex: 1;
@@ -843,23 +861,23 @@
     }
     .tab-bar-item:hover, .tab-bar-item:active {
       color: var(--accent);
-      background: rgba(0,230,118,0.05);
+      background: var(--accent-light);
     }
     .tab-bar-icon { font-size: 20px; }
 
     /* FILTER CHIPS */
     .filter-chip {
-      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--surface2);
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
       background: var(--surface); color: var(--text-dim); font-size: 12px; font-weight: 600;
       cursor: pointer; transition: all 0.2s; font-family: var(--font);
     }
     .filter-chip.active, .filter-chip:hover {
-      border-color: var(--accent); color: var(--accent); background: rgba(0,230,118,0.08);
+      border-color: var(--accent); color: var(--accent); background: var(--accent-light);
     }
 
     /* PROGRAM CARDS */
     .program-card {
-      background: var(--surface); border: 1px solid var(--surface2); border-radius: var(--radius);
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 16px; cursor: pointer; transition: all 0.2s;
     }
     .program-card:hover { border-color: var(--accent); transform: translateY(-1px); }
@@ -872,7 +890,7 @@
 
     /* HIIT CARDS */
     .hiit-card {
-      background: var(--surface); border: 1px solid var(--surface2); border-radius: var(--radius);
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 16px; cursor: pointer; transition: all 0.2s;
     }
     .hiit-card:hover { border-color: #f59e0b; transform: translateY(-1px); }
@@ -882,10 +900,10 @@
     .heatmap-cell {
       width: 12px; height: 12px; border-radius: 2px; background: var(--surface2);
     }
-    .heatmap-cell.l1 { background: #064e3b; }
-    .heatmap-cell.l2 { background: #059669; }
-    .heatmap-cell.l3 { background: #34d399; }
-    .heatmap-cell.l4 { background: #00e676; }
+    .heatmap-cell.l1 { background: #D0F0EB; }
+    .heatmap-cell.l2 { background: #80DDD0; }
+    .heatmap-cell.l3 { background: #2DD4BF; }
+    .heatmap-cell.l4 { background: #0A9B8C; }
 
     /* BODY RADAR BARS */
     .radar-row { display: flex; align-items: center; gap: 8px; }
@@ -960,7 +978,7 @@
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      border: 1px solid var(--surface2);
+      border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text);
       font-size: 18px;
@@ -969,6 +987,45 @@
       align-items: center;
       justify-content: center;
     }
+
+    /* CALIBRATION STYLES */
+    #calibrationSetup { align-items: center; padding: 24px; padding-top: 40px; overflow-y: auto; }
+    .calib-container { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 20px; }
+    .calib-header { text-align: center; }
+    .calib-header h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .calib-header p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+    .calib-exercise-list { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border-radius: var(--radius); padding: 12px; border: 1px solid var(--border); }
+    .calib-exercise-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: var(--surface2); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+    .calib-exercise-item:hover { border-color: var(--accent); background: var(--accent-light); }
+    .calib-exercise-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+    .calib-exercise-item label { flex: 1; cursor: pointer; font-size: 14px; font-weight: 500; }
+    .calib-action-row { display: flex; gap: 8px; }
+    .calib-btn { flex: 1; padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: var(--font); }
+    .calib-btn:hover { border-color: var(--accent); }
+    .calib-btn.start { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .calib-btn.start:hover { background: var(--accent-dim); }
+    .calib-btn.danger { border-color: var(--danger); color: var(--danger); }
+    .calib-btn.danger:hover { background: rgba(220, 53, 69, 0.08); }
+    #calibration { position: relative; background: #000; }
+    .calib-camera-container { position: relative; flex: 1; overflow: hidden; }
+    #calibVideoEl { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    #calibCanvasEl { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); pointer-events: none; }
+    .calib-hud { position: absolute; top: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%); z-index: 10; display: flex; justify-content: space-between; align-items: flex-start; }
+    .calib-hud-left h3 { font-size: 16px; font-weight: 700; color: #fff; }
+    .calib-progress-dots { display: flex; gap: 6px; margin-top: 12px; }
+    .calib-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; border: 1px solid rgba(255,255,255,0.5); }
+    .calib-dot.active { background: var(--accent); width: 24px; border-radius: 4px; animation: calib-pulse 1s ease-in-out infinite; }
+    .calib-dot.completed { background: var(--success, #22A867); }
+    @keyframes calib-pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+    .calib-feedback { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 24px; font-size: 14px; font-weight: 600; z-index: 10; transition: all 0.3s; opacity: 0; pointer-events: none; text-align: center; max-width: 85%; }
+    .calib-feedback.show { opacity: 1; }
+    .calib-feedback.good { background: rgba(10, 155, 140, 0.92); color: #fff; }
+    .calib-feedback.warn { background: rgba(230, 146, 10, 0.92); color: #fff; }
+    .calib-controls { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 100%); display: flex; justify-content: center; gap: 12px; z-index: 10; }
+    .calib-ctrl-btn { padding: 12px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.6); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: var(--font); }
+    .calib-ctrl-btn:hover { background: rgba(0,0,0,0.8); border-color: var(--accent); }
+    .calib-ctrl-btn.skip { border-color: var(--warn); color: var(--warn); }
+    .calib-ctrl-btn.cancel { border-color: var(--danger); color: var(--danger); }
   </style>
 </head>
 <body>
@@ -1025,13 +1082,13 @@
       <h2>How Much Detail?</h2>
       <p>Pick how much info you want to see. You can always change this in Settings.</p>
       <div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:280px; margin-top:8px;">
-        <button class="level-btn" onclick="setDetailLevel('simple')" style="padding:14px; border-radius:10px; border:1px solid var(--surface2); background:var(--surface); color:var(--text); cursor:pointer; text-align:left;">
+        <button class="level-btn" onclick="setDetailLevel('simple')" style="padding:14px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; text-align:left;">
           <strong>Simple</strong><br><span style="font-size:12px; color:var(--text-dim);">Just tell me what to fix</span>
         </button>
         <button class="level-btn" onclick="setDetailLevel('standard')" style="padding:14px; border-radius:10px; border:1px solid var(--accent); background:rgba(0,230,118,0.08); color:var(--text); cursor:pointer; text-align:left;">
           <strong>Standard</strong> <span style="font-size:11px; color:var(--accent);">recommended</span><br><span style="font-size:12px; color:var(--text-dim);">Scores, tips, and progress tracking</span>
         </button>
-        <button class="level-btn" onclick="setDetailLevel('nerd')" style="padding:14px; border-radius:10px; border:1px solid var(--surface2); background:var(--surface); color:var(--text); cursor:pointer; text-align:left;">
+        <button class="level-btn" onclick="setDetailLevel('nerd')" style="padding:14px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; text-align:left;">
           <strong>Nerd Mode</strong><br><span style="font-size:12px; color:var(--text-dim);">Joint angles, signal data, raw metrics</span>
         </button>
       </div>
@@ -1358,8 +1415,8 @@
         </div>
 
         <div style="margin-top:12px;">
-          <input type="text" id="friendCodeInput" placeholder="Friend code" maxlength="6" style="width:45%; display:inline-block; padding:10px; background:var(--surface); border:1px solid var(--surface2); border-radius:8px; color:var(--text); margin-right:4px;">
-          <input type="text" id="friendNameInput" placeholder="Name" style="width:35%; display:inline-block; padding:10px; background:var(--surface); border:1px solid var(--surface2); border-radius:8px; color:var(--text); margin-right:4px;">
+          <input type="text" id="friendCodeInput" placeholder="Friend code" maxlength="6" style="width:45%; display:inline-block; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); margin-right:4px;">
+          <input type="text" id="friendNameInput" placeholder="Name" style="width:35%; display:inline-block; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); margin-right:4px;">
           <button class="btn-primary" onclick="addFriend()" style="padding:10px 16px; font-size:13px;">Add</button>
         </div>
       </div>
@@ -1374,7 +1431,7 @@
       <h3>Display</h3>
       <div class="setting-item" style="flex-direction:column; align-items:flex-start; gap:8px;">
         <label class="setting-label">Detail Level</label>
-        <select id="detailLevelSelect" onchange="saveSetting('detailLevel', this.value)" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--surface2); border-radius:8px; color:var(--text); font-size:14px;">
+        <select id="detailLevelSelect" onchange="saveSetting('detailLevel', this.value)" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;">
           <option value="simple">Simple — Just tell me what to fix</option>
           <option value="standard">Standard — Scores, tips, progress</option>
           <option value="nerd">Nerd Mode — All the data</option>
@@ -1444,6 +1501,10 @@
       <div class="setting-item">
         <div><label>Push Notifications</label><div class="setting-desc">Daily workout reminders</div></div>
         <button class="nav-btn" style="flex:none; padding:8px 16px;" onclick="requestNotifications()">Enable</button>
+      </div>
+      <div class="setting-item">
+        <div><label>Form Calibration</label><div class="setting-desc"><span id="calibStatusLabel">Not calibrated</span></div></div>
+        <button class="nav-btn" style="flex:none; padding:8px 16px;" data-action="showCalibrationSetup">Calibrate</button>
       </div>
     </div>
 
@@ -1534,8 +1595,8 @@
     <h2>PT Dashboard</h2>
     <div class="compliance-ring" id="complianceRing">
       <svg viewBox="0 0 140 140">
-        <circle cx="70" cy="70" r="60" fill="none" stroke="#252525" stroke-width="10"/>
-        <circle cx="70" cy="70" r="60" fill="none" stroke="#00e676" stroke-width="10"
+        <circle cx="70" cy="70" r="60" fill="none" stroke="#E2E6EC" stroke-width="10"/>
+        <circle cx="70" cy="70" r="60" fill="none" stroke="#0A9B8C" stroke-width="10"
           stroke-dasharray="377" stroke-dashoffset="377" stroke-linecap="round" id="compRingCircle"/>
       </svg>
       <div style="text-align:center;">
@@ -1584,7 +1645,7 @@
     </div>
     <div class="report-actions">
       <button style="background:#7c4dff; border:none; color:#fff;" onclick="sharePTReport()">Share / Print</button>
-      <button style="background:transparent; border:1px solid var(--surface2); color:var(--text);" onclick="downloadPTReport()">Download</button>
+      <button style="background:transparent; border:1px solid var(--border); color:var(--text);" onclick="downloadPTReport()">Download</button>
     </div>
     <div style="padding-bottom:80px;"></div>
     <button class="back-btn" onclick="showScreen('ptDashboard')">← Back</button>
@@ -1776,7 +1837,7 @@
         <div id="videoFileName" style="font-size:14px; font-weight:600; margin-bottom:8px;"></div>
         <div id="videoMeta" style="font-size:12px; color:var(--text-dim); margin-bottom:12px;"></div>
         <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Exercise Type</label>
-        <select id="videoExerciseSelect" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--surface2); background:var(--surface2); color:var(--text); font-size:14px; margin-bottom:12px;">
+        <select id="videoExerciseSelect" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:14px; margin-bottom:12px;">
           <option value="squat">Squats</option>
           <option value="pushup">Push-Ups</option>
           <option value="lunge">Lunges</option>
@@ -1802,6 +1863,49 @@
     <div class="screen-header"><button class="back-arrow" onclick="showScreen('home')">←</button><h2 style="font-size:22px; font-weight:800;">Recovery & Mobility</h2></div>
     <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; max-width:400px;">Guided stretching with science-backed hold times.</p>
     <div id="mobilityRoutines" style="width:100%; max-width:400px; display:flex; flex-direction:column; gap:12px;"></div>
+  </div>
+
+  <!-- CALIBRATION SETUP SCREEN -->
+  <div class="screen" id="calibrationSetup">
+    <div class="calib-container">
+      <div class="calib-header">
+        <h2>Form Calibration</h2>
+        <p>Teach PhysioRep your form for accurate tracking. Choose exercises to calibrate (3 reps each).</p>
+      </div>
+      <div>
+        <h4 style="font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Select Exercises</h4>
+        <div class="calib-exercise-list" id="calibExerciseList"></div>
+      </div>
+      <div class="calib-action-row">
+        <button class="calib-btn start" data-action="startCalibration">Start Calibration</button>
+      </div>
+      <button class="calib-btn danger" data-action="resetCalibration">Reset All Calibration Data</button>
+      <button class="back-btn" onclick="showScreen('settings')">&#8592; Back to Settings</button>
+    </div>
+  </div>
+
+  <!-- CALIBRATION WIZARD SCREEN -->
+  <div class="screen" id="calibration">
+    <div class="calib-camera-container">
+      <video id="calibVideoEl" autoplay playsinline aria-hidden="true"></video>
+      <canvas id="calibCanvasEl" aria-hidden="true"></canvas>
+      <div class="calib-hud">
+        <div class="calib-hud-left">
+          <h3 id="calibExerciseName">Squats</h3>
+          <div class="calib-progress-dots" id="calibProgressDots">
+            <div class="calib-dot"></div>
+            <div class="calib-dot"></div>
+            <div class="calib-dot"></div>
+          </div>
+        </div>
+      </div>
+      <div class="calib-feedback" id="calibFeedback"></div>
+      <div class="calib-controls">
+        <button class="calib-ctrl-btn skip" data-action="skipCalibExercise">Skip</button>
+        <button class="calib-ctrl-btn" data-action="nextCalibExercise">Next Exercise</button>
+        <button class="calib-ctrl-btn cancel" data-action="cancelCalibration">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- EXERCISE SCIENCE MODAL -->

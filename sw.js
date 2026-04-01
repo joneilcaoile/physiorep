@@ -3,7 +3,7 @@
  * Cache-first strategy for app shell, network-first for MediaPipe models.
  */
 
-const CACHE_NAME = 'physiorep-v11';
+const CACHE_NAME = 'physiorep-v15';
 const APP_SHELL = [
   '/',
   '/index.html',
